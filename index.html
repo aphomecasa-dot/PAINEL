@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<title>Dashboard com Nuvens</title>
+<link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet" />
+<style>
+:root {
+    --bg: #0d0d0d;
+    --text: #ffffff;
+    --radius: 18px;
+    --shadow: 0 0 20px #0008;
+}
+
+body {
+    margin: 0;
+    background: url(teste2.png) no-repeat center center fixed !important;
+    background-size: cover !important;
+    color: var(--text);
+    font-family: "Segoe UI", sans-serif;
+    overflow: hidden;
+}
+
+.layout {
+    display: grid;
+    grid-template-rows: 60% 40%;
+    gap: 20px;
+    padding: 25px;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Quadrante topo */
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+#top-effect {
+    position: absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    border-radius: var(--radius);
+    z-index:0;
+}
+
+.top-content {
+    display:flex;
+    width:100%;
+    justify-content: space-between;
+    align-items:center;
+    position: relative;
+    z-index:1;
+}
+
+#weather-now-day { font-size: 72px; font-weight:700; color:#fff; }
+
+.center-top { text-align:center; }
+#clock { font-size: 143px; font-weight:700; line-height:1; }
+#date { font-size: 36px; font-weight:700; margin-top:8px; text-transform: uppercase; }
+
+.right-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* centraliza conteúdo horizontalmente */
+    justify-content: flex-end; /* leva a cotação para baixo */
+    height: 100%;
+    gap: 10px;
+}
+
+#weather-description { 
+    font-size: 42px; /* 30px + 40% */
+    text-align:center;
+}
+
+.weather-temp-block { 
+    display:flex; 
+    align-items:center; 
+    gap:10px; 
+}
+
+#weather-icon { 
+    font-size: 100.8px; /* 72px + 40% */
+}
+
+#weather-now { 
+    font-size: 100.8px; /* 72px + 40% */
+    font-weight:700; 
+}
+
+/* Cotação na parte inferior */
+#currency-section { 
+    margin-top: 20px; 
+    font-size: 32px; 
+    display:flex; 
+    justify-content:center; 
+    gap:40px; 
+}
+
+/* Previsão */
+#forecast-section {
+    display:flex;
+    justify-content: space-between;
+    gap:20px;
+    padding:10px 20px;
+}
+
+.forecast-item-horizontal {
+    flex: 1;
+    background-color: rgba(0,0,0,0.8);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.forecast-icon-horizontal { font-size: 62.72px; margin-bottom:5px; }
+.forecast-day-horizontal { font-size:24.5px; margin-top:6px; }
+.forecast-temp-horizontal { font-size:30.8px; font-weight:700; margin-top:4px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+    <!-- Quadrante topo -->
+    <div class="top">
+        <canvas id="top-effect"></canvas>
+        <div class="top-content">
+            <span id="weather-now-day"></span>
+            <div class="center-top">
+                <div id="clock">--:--:--</div>
+                <div id="date">Carregando...</div>
+            </div>
+            <div class="right-top">
+                <div id="weather-description"></div>
+                <div class="weather-temp-block">
+                    <span id="weather-icon" class="mdi"></span>
+                    <span id="weather-now"></span>
+                </div>
+                <div id="currency-section">
+                    <div id="usd">USD: ...</div>
+                    <div id="eur">EUR: ...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Previsão -->
+    <section id="forecast-section"></section>
+</div>
+
+<script>
+/* RELÓGIO */
+function updateClock(){
+    const now=new Date();
+    document.getElementById("clock").innerText=
+        now.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    document.getElementById("date").innerText=
+        now.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"}).toUpperCase();
+}
+setInterval(updateClock,1000);
+updateClock();
+
+/* ÍCONES CLIMA */
+function weatherIcon(code){
+    const map={"Clear":"mdi-weather-sunny","Clouds":"mdi-weather-cloudy","Rain":"mdi-weather-rainy","Drizzle":"mdi-weather-partly-rainy","Thunderstorm":"mdi-weather-lightning","Snow":"mdi-weather-snowy","Mist":"mdi-weather-fog","Fog":"mdi-weather-fog"};
+    return map[code]||"mdi-weather-cloudy";
+}
+
+/* CORES TEMPERATURA */
+function setTempColor(temp){
+    const el=document.getElementById("weather-now");
+    if(temp>25) el.style.color="#FF8C00";
+    else if(temp>=20) el.style.color="#FFFF00";
+    else el.style.color="#00aaff";
+}
+
+/* EFEITO DE NUVENS PROFISSIONAL */
+function showWeatherEffectOnCanvas(condition, canvasId){
+    const canvas=document.getElementById(canvasId);
+    const ctx=canvas.getContext("2d");
+    canvas.width=canvas.offsetWidth;
+    canvas.height=canvas.offsetHeight;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    if(condition==="Rain"||condition==="Drizzle"){
+        const drops=[];
+        for(let i=0;i<140;i++){
+            drops.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,len:Math.random()*20+10,speed:Math.random()*4+4});
+        }
+        function rain(){
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.strokeStyle="rgba(180,220,255,0.6)";
+            ctx.lineWidth=2;
+            drops.forEach(d=>{
+                ctx.beginPath();
+                ctx.moveTo(d.x,d.y);
+                ctx.lineTo(d.x,d.y+d.len);
+                ctx.stroke();
+                d.y+=d.speed;
+                if(d.y>canvas.height)d.y=-20;
+            });
+            requestAnimationFrame(rain);
+        }
+        rain();
+        return;
+    }
+
+    if(condition==="Clouds"){
+        const clouds=[];
+        for(let i=0;i<6;i++){
+            clouds.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height*0.6,w:Math.random()*180+120,h:Math.random()*60+40,speed:Math.random()*0.4+0.2});
+        }
+        function cloudsMove(){
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            clouds.forEach(c=>{
+                ctx.fillStyle="rgba(255,255,255,0.25)";
+                ctx.beginPath();
+                ctx.ellipse(c.x,c.y,c.w,c.h,0,0,Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle="rgba(255,255,255,0.18)";
+                ctx.beginPath();
+                ctx.ellipse(c.x+c.w*0.3,c.y-20,c.w*0.7,c.h*0.8,0,0,Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle="rgba(255,255,255,0.15)";
+                ctx.beginPath();
+                ctx.ellipse(c.x-c.w*0.2,c.y-10,c.w*0.6,c.h*0.7,0,0,Math.PI*2);
+                ctx.fill();
+                c.x+=c.speed;
+                if(c.x-c.w>canvas.width)c.x=-c.w;
+            });
+            requestAnimationFrame(cloudsMove);
+        }
+        cloudsMove();
+        return;
+    }
+}
+
+/* CLIMA */
+const LAT=-23.5270;
+const LON=-46.7260;
+const API_KEY="a1914a0291e97791460f4558d57cf359";
+
+async function loadWeather(){
+    try{
+        const nowRes=await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&units=metric&lang=pt_br&appid=${API_KEY}`);
+        const now=await nowRes.json();
+        const temp=Math.round(now.main.temp);
+        document.getElementById("weather-now").innerText=`${temp}°C`;
+
+        const condition=now.weather[0].main;
+        const iconEl=document.getElementById("weather-icon");
+        iconEl.className="mdi "+weatherIcon(condition);
+        if(condition==="Rain"||condition==="Drizzle") iconEl.style.color="#00aaff";
+        else if(condition==="Clear") iconEl.style.color="#FFFF00";
+        else iconEl.style.color="#cccccc";
+
+        document.getElementById("weather-description").innerText=now.weather[0].description.toUpperCase();
+        const date=new Date();
+        document.getElementById("weather-now-day").innerText=`${String(date.getDate()).padStart(2,"0")}-${date.toLocaleDateString("pt-BR",{month:"short"}).replace(".","").toUpperCase()}`;
+        setTempColor(temp);
+
+        showWeatherEffectOnCanvas(condition,"top-effect");
+
+        /* Previsão */
+        const fRes=await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${LAT}&lon=${LON}&units=metric&lang=pt_br&appid=${API_KEY}`);
+        const fJson=await fRes.json();
+        const fDiv=document.getElementById("forecast-section");
+        fDiv.innerHTML="";
+        const list=fJson.list;
+        const daily=[];
+        for(let i=1;i<=5;i++){
+            const target=new Date(); target.setDate(target.getDate()+i); target.setHours(12,0,0,0);
+            let best=null,diffMin=Infinity;
+            list.forEach(item=>{
+                const dt=new Date(item.dt*1000);
+                const diff=Math.abs(dt-target);
+                if(diff<diffMin){ diffMin=diff; best=item; }
+            });
+            daily.push(best);
+        }
+        daily.forEach(day=>{
+            const dt=new Date(day.dt*1000);
+            const t=Math.round(day.main.temp);
+            let col;
+            if(t>25) col="#FF8C00";
+            else if(t>=20) col="#FFFF00";
+            else col="#00aaff";
+            const mainCond=day.weather[0].main;
+            let iconCol;
+            if(mainCond==="Rain"||mainCond==="Drizzle") iconCol="#00aaff";
+            else if(mainCond==="Clear") iconCol="#FFFF00";
+            else iconCol="#cccccc";
+            fDiv.innerHTML+=`
+                <div class="forecast-item-horizontal">
+                    <span class="forecast-icon-horizontal mdi ${weatherIcon(mainCond)}" style="color:${iconCol} !important;"></span>
+                    <div class="forecast-day-horizontal">${dt.toLocaleDateString("pt-BR",{weekday:"short"}).toUpperCase()}</div>
+                    <div class="forecast-temp-horizontal" style="color:${col}">${t}°C</div>
+                </div>
+            `;
+        });
+    }catch(err){console.error("ERRO CLIMA",err);}
+}
+loadWeather();
+setInterval(loadWeather,300000);
+
+/* COTAÇÃO */
+function loadCurrency(){
+    fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL").then(r=>r.json()).then(d=>{
+        document.getElementById("usd").innerText=`USD: R$ ${Number(d.USDBRL.bid).toFixed(2)}`;
+    });
+    fetch("https://economia.awesomeapi.com.br/json/last/EUR-BRL").then(r=>r.json()).then(d=>{
+        document.getElementById("eur").innerText=`EUR: R$ ${Number(d.EURBRL.bid).toFixed(2)}`;
+    });
+}
+loadCurrency();
+setInterval(loadCurrency,60000);
+</script>
+
+</body>
+</html>
