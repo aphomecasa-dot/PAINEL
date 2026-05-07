@@ -1,345 +1,173 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8" />
-<title>Dashboard com Nuvens</title>
+  <meta charset="UTF-8" />
+  <title>Dashboard com Nuvens</title>
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --text: #ffffff;
+      --radius: 18px;
+      --shadow: 0 0 20px #0008;
+    }
+    body {
+      margin: 0;
+      background: url(teste2.png) no-repeat center center fixed;
+      background-size: cover;
+      color: var(--text);
+      font-family: "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
 
-<link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet" />
+    /* Tema nublado: todas as fontes viram azul escuro */
+    body.cloudy-theme {
+      --text: #0a1a3a;
+      color: #0a1a3a;
+    }
+    body.cloudy-theme #clock,
+    body.cloudy-theme #date,
+    body.cloudy-theme #weather-description,
+    body.cloudy-theme #weather-now,
+    body.cloudy-theme #weather-icon,
+    body.cloudy-theme #weather-now-day,
+    body.cloudy-theme #usd,
+    body.cloudy-theme #eur,
+    body.cloudy-theme .day-row-name,
+    body.cloudy-theme .day-row-icon,
+    body.cloudy-theme .day-row-min,
+    body.cloudy-theme .day-row-max {
+      color: #0a1a3a !important;
+    }
 
-<style>
-:root {
-    --bg: #0d0d0d;
-    --text: #ffffff;
-    --radius: 18px;
-    --shadow: 0 0 20px #0008;
-}
-
-body {
-    margin: 0;
-    background: url(teste2.png) no-repeat center center fixed;
-    background-size: cover;
-    color: var(--text);
-    font-family: "Segoe UI", sans-serif;
-    overflow: hidden;
-}
-
-#bg-rain-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.layout {
-    display: grid;
-    grid-template-rows: 1fr;
-    gap: 0;
-    padding: 25px;
-    height: 100vh;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 1;
-}
-
-.top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: transparent;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 20px 30px;
-    position: relative;
-    overflow: hidden;
-}
-
-#top-rain-canvas {
-    position: absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    pointer-events:none;
-    z-index:0;
-    border-radius: var(--radius);
-}
-
-.top-content {
-    display: flex;
-    width: 100%;
-    justify-content: space-between;
-    align-items: stretch;
-    position: relative;
-    z-index: 1;
-    height: 100%;
-    gap: 4px;
-}
-
-/* COLUNAS */
-
-.col {
-    display: flex;
-    flex-direction: column;
-    padding: 0 20px;
-    box-sizing: border-box;
-}
-
-/* ESQUERDA */
-.col-weather {
-    flex: 0 0 26%;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 8px;
-}
-
-/* CENTRO */
-.col-clock {
-    flex: 0 0 40%;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding-right: 0;
-}
-
-/* DIREITA (AJUSTADO) */
-.col-chart {
-    flex: 1;
-    justify-content: center;
-    align-items: stretch;
-    min-width: 0;
-
-    /* ALTERAÇÃO AQUI */
-    margin-left: 10%;
-}
-
-/* CLIMA */
-
-.weather-bottom-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 20px;
-    width: 100%;
-    flex-wrap: wrap;
-}
-
-#weather-description {
-    font-size: 29px;
-    text-align:center;
-}
-
-.weather-temp-block {
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-
-#weather-icon {
-    font-size: 70px;
-}
-
-#weather-now {
-    font-size: 70px;
-    font-weight:700;
-}
-
-#currency-section {
-    font-size: 22px;
-    display:flex;
-    justify-content:center;
-    gap:28px;
-}
-
-#weather-now-day {
-    font-size: 56px;
-    font-weight:700;
-    color:#fff;
-    white-space:nowrap;
-}
-
-/* RELÓGIO */
-
-#clock {
-    font-size: 200px;
-    font-weight:700;
-    line-height:1;
-}
-
-#date {
-    font-size: 36px;
-    font-weight:700;
-    margin-top:8px;
-    text-transform: uppercase;
-    text-align: center;
-}
-
-/* GRÁFICO */
-
-#day-chart-wrap {
-    width: 100%;
-    padding: 0 8px;
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-
-    gap: 10px;
-}
-
-.day-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-}
-
-.day-row-name {
-    font-size: 29px;
-    font-weight: 700;
-    color: #ffffff;
-    width: 72px;
-    flex-shrink: 0;
-}
-
-.day-row-icon {
-    font-size: 36px;
-    flex-shrink: 0;
-    width: 42px;
-    text-align: center;
-}
-
-.day-row-min {
-    font-size: 26px;
-    color: rgba(255,255,255,0.65);
-    width: 52px;
-    text-align: right;
-    flex-shrink: 0;
-}
-
-.day-row-bar-wrap {
-    flex: 1;
-    height: 13px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 7px;
-    position: relative;
-    overflow: hidden;
-}
-
-.day-row-bar {
-    position: absolute;
-    height: 100%;
-    border-radius: 7px;
-}
-
-.day-row-max {
-    font-size: 29px;
-    font-weight: 700;
-    color: #ffffff;
-    width: 52px;
-    text-align: left;
-    flex-shrink: 0;
-}
-</style>
+    #bg-rain-canvas { position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0; }
+    .layout { display:grid;grid-template-rows:1fr;gap:0;padding:25px;height:100vh;box-sizing:border-box;position:relative;z-index:1; }
+    .top { display:flex;justify-content:space-between;align-items:center;background:transparent;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 30px;position:relative;overflow:hidden; }
+    #top-rain-canvas { position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:var(--radius); }
+    .top-content { display:flex;width:100%;justify-content:space-between;align-items:stretch;position:relative;z-index:1;height:100%;gap:4px; }
+    .col { display:flex;flex-direction:column;padding:0 20px;box-sizing:border-box; }
+    .col-weather { flex:0 0 26%;justify-content:center;align-items:flex-start;gap:8px; }
+    .col-clock { flex:0 0 40%;justify-content:center;align-items:center;text-align:center;padding-right:0; }
+    .col-chart { flex:1;justify-content:center;align-items:stretch;min-width:0;margin-left:10%; }
+    .weather-bottom-row { display:flex;flex-direction:row;align-items:center;gap:20px;width:100%;flex-wrap:wrap; }
+    #weather-description { font-size:29px;text-align:center; }
+    .weather-temp-block { display:flex;align-items:center;gap:10px; }
+    #weather-icon { font-size:70px; }
+    #weather-now { font-size:70px;font-weight:700; }
+    #currency-section { font-size:22px;display:flex;justify-content:center;gap:28px; }
+    #weather-now-day { font-size:56px;font-weight:700;color:#fff;white-space:nowrap; }
+    #clock { font-size:200px;font-weight:700;line-height:1; }
+    #date { font-size:36px;font-weight:700;margin-top:8px;text-transform:uppercase;text-align:center; }
+    #day-chart-wrap { width:100%;padding:0 8px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:10px; }
+    .day-row { display:flex;flex-direction:row;align-items:center;gap:12px; }
+    .day-row-name { font-size:29px;font-weight:700;color:#ffffff;width:72px;flex-shrink:0; }
+    .day-row-icon { font-size:36px;flex-shrink:0;width:42px;text-align:center; }
+    .day-row-min { font-size:26px;color:rgba(255,255,255,0.65);width:52px;text-align:right;flex-shrink:0; }
+    .day-row-bar-wrap { flex:1;height:13px;background:rgba(255,255,255,0.15);border-radius:7px;position:relative;overflow:hidden; }
+    .day-row-bar { position:absolute;height:100%;border-radius:7px; }
+    .day-row-max { font-size:29px;font-weight:700;color:#ffffff;width:52px;text-align:left;flex-shrink:0; }
+  </style>
 </head>
-
 <body>
-
 <canvas id="bg-rain-canvas"></canvas>
-
 <div class="layout">
-
-    <div class="top">
-
-        <canvas id="top-rain-canvas"></canvas>
-
-        <div class="top-content">
-
-            <div class="col col-weather">
-                <div id="weather-description">PARCIALMENTE NUBLADO</div>
-
-                <div class="weather-temp-block">
-                    <span id="weather-icon" class="mdi mdi-weather-cloudy"></span>
-                    <span id="weather-now">22°C</span>
-                </div>
-
-                <div class="weather-bottom-row">
-                    <div id="currency-section">
-                        <div id="usd">USD: R$ 5,68</div>
-                        <div id="eur">EUR: R$ 6,17</div>
-                    </div>
-
-                    <span id="weather-now-day">07-MAI</span>
-                </div>
-            </div>
-
-            <div class="col col-clock">
-                <div id="clock">15:48:22</div>
-                <div id="date">QUARTA-FEIRA, 07 MAIO</div>
-            </div>
-
-            <div class="col col-chart">
-                <div id="day-chart-wrap">
-
-                    <div class="day-row">
-                        <div class="day-row-name">Qui.</div>
-                        <span class="day-row-icon mdi mdi-weather-cloudy"></span>
-                        <div class="day-row-min">18°</div>
-                        <div class="day-row-bar-wrap">
-                            <div class="day-row-bar" style="left:15%; width:55%; background:linear-gradient(to right,#FFD70099,#FFD700)"></div>
-                        </div>
-                        <div class="day-row-max">27°</div>
-                    </div>
-
-                    <div class="day-row">
-                        <div class="day-row-name">Sex.</div>
-                        <span class="day-row-icon mdi mdi-weather-rainy"></span>
-                        <div class="day-row-min">17°</div>
-                        <div class="day-row-bar-wrap">
-                            <div class="day-row-bar" style="left:10%; width:45%; background:linear-gradient(to right,#74b9ff99,#74b9ff)"></div>
-                        </div>
-                        <div class="day-row-max">23°</div>
-                    </div>
-
-                    <div class="day-row">
-                        <div class="day-row-name">Sáb.</div>
-                        <span class="day-row-icon mdi mdi-weather-sunny"></span>
-                        <div class="day-row-min">19°</div>
-                        <div class="day-row-bar-wrap">
-                            <div class="day-row-bar" style="left:20%; width:60%; background:linear-gradient(to right,#FF8C0099,#FF8C00)"></div>
-                        </div>
-                        <div class="day-row-max">31°</div>
-                    </div>
-
-                    <div class="day-row">
-                        <div class="day-row-name">Dom.</div>
-                        <span class="day-row-icon mdi mdi-weather-partly-cloudy"></span>
-                        <div class="day-row-min">20°</div>
-                        <div class="day-row-bar-wrap">
-                            <div class="day-row-bar" style="left:25%; width:50%; background:linear-gradient(to right,#90EE9099,#90EE90)"></div>
-                        </div>
-                        <div class="day-row-max">28°</div>
-                    </div>
-
-                    <div class="day-row">
-                        <div class="day-row-name">Seg.</div>
-                        <span class="day-row-icon mdi mdi-weather-sunny"></span>
-                        <div class="day-row-min">21°</div>
-                        <div class="day-row-bar-wrap">
-                            <div class="day-row-bar" style="left:30%; width:58%; background:linear-gradient(to right,#FF8C0099,#FF8C00)"></div>
-                        </div>
-                        <div class="day-row-max">32°</div>
-                    </div>
-
-                </div>
-            </div>
-
+  <div class="top">
+    <canvas id="top-rain-canvas"></canvas>
+    <div class="top-content">
+      <div class="col col-weather">
+        <div id="weather-description">PARCIALMENTE NUBLADO</div>
+        <div class="weather-temp-block">
+          <span id="weather-icon" class="mdi mdi-weather-cloudy"></span>
+          <span id="weather-now">22°C</span>
         </div>
+        <div class="weather-bottom-row">
+          <div id="currency-section">
+            <div id="usd">USD: R$ 5,68</div>
+            <div id="eur">EUR: R$ 6,17</div>
+          </div>
+          <span id="weather-now-day">07-MAI</span>
+        </div>
+      </div>
+      <div class="col col-clock">
+        <div id="clock">15:48:22</div>
+        <div id="date">QUARTA-FEIRA, 07 MAIO</div>
+      </div>
+      <div class="col col-chart">
+        <div id="day-chart-wrap">
+          <div class="day-row">
+            <div class="day-row-name">Qui.</div>
+            <span class="day-row-icon mdi mdi-weather-cloudy"></span>
+            <div class="day-row-min">18°</div>
+            <div class="day-row-bar-wrap"><div class="day-row-bar" style="left:15%;width:55%;background:linear-gradient(to right,#FFD70099,#FFD700)"></div></div>
+            <div class="day-row-max">27°</div>
+          </div>
+          <div class="day-row">
+            <div class="day-row-name">Sex.</div>
+            <span class="day-row-icon mdi mdi-weather-rainy"></span>
+            <div class="day-row-min">17°</div>
+            <div class="day-row-bar-wrap"><div class="day-row-bar" style="left:10%;width:45%;background:linear-gradient(to right,#74b9ff99,#74b9ff)"></div></div>
+            <div class="day-row-max">23°</div>
+          </div>
+          <div class="day-row">
+            <div class="day-row-name">Sáb.</div>
+            <span class="day-row-icon mdi mdi-weather-sunny"></span>
+            <div class="day-row-min">19°</div>
+            <div class="day-row-bar-wrap"><div class="day-row-bar" style="left:20%;width:60%;background:linear-gradient(to right,#FF8C0099,#FF8C00)"></div></div>
+            <div class="day-row-max">31°</div>
+          </div>
+          <div class="day-row">
+            <div class="day-row-name">Dom.</div>
+            <span class="day-row-icon mdi mdi-weather-partly-cloudy"></span>
+            <div class="day-row-min">20°</div>
+            <div class="day-row-bar-wrap"><div class="day-row-bar" style="left:25%;width:50%;background:linear-gradient(to right,#90EE9099,#90EE90)"></div></div>
+            <div class="day-row-max">28°</div>
+          </div>
+          <div class="day-row">
+            <div class="day-row-name">Seg.</div>
+            <span class="day-row-icon mdi mdi-weather-sunny"></span>
+            <div class="day-row-min">21°</div>
+            <div class="day-row-bar-wrap"><div class="day-row-bar" style="left:30%;width:58%;background:linear-gradient(to right,#FF8C0099,#FF8C00)"></div></div>
+            <div class="day-row-max">32°</div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
+<script>
+  const CLOUDY_KEYWORDS = [
+    'nublado', 'nuvens', 'nevoeiro', 'encoberto', 'overcast',
+    'cloudy', 'clouds', 'fog', 'mist', 'haze', 'nebuloso',
+    'parcialmente nublado', 'partly cloudy', 'mostly cloudy',
+    'levemente nublado', 'algumas nuvens', 'few clouds'
+  ];
+
+  function isCloudyCondition(description) {
+    const lower = description.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return CLOUDY_KEYWORDS.some(kw =>
+      lower.includes(kw.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+    );
+  }
+
+  function updateBackground(description) {
+    if (isCloudyCondition(description)) {
+      document.body.style.backgroundImage = "url('nublado.jpg')";
+      document.body.classList.add('cloudy-theme');
+    } else {
+      document.body.style.backgroundImage = "url('teste2.png')";
+      document.body.classList.remove('cloudy-theme');
+    }
+  }
+
+  const weatherDesc = document.getElementById('weather-description');
+
+  updateBackground(weatherDesc.textContent);
+
+  const observer = new MutationObserver(() => {
+    updateBackground(weatherDesc.textContent);
+  });
+  observer.observe(weatherDesc, { childList: true, characterData: true, subtree: true });
+</script>
 </body>
 </html>
