@@ -19,12 +19,6 @@
       font-family: "Segoe UI", sans-serif;
       overflow: hidden;
     }
-
-    /* Tema nublado: todas as fontes viram azul escuro */
-    body.cloudy-theme {
-      --text: #0a1a3a;
-      color: #0a1a3a;
-    }
     body.cloudy-theme #clock,
     body.cloudy-theme #date,
     body.cloudy-theme #weather-description,
@@ -48,7 +42,17 @@
     .col { display:flex;flex-direction:column;padding:0 20px;box-sizing:border-box; }
     .col-weather { flex:0 0 26%;justify-content:center;align-items:flex-start;gap:8px; }
     .col-clock { flex:0 0 40%;justify-content:center;align-items:center;text-align:center;padding-right:0; }
-    .col-chart { flex:1;justify-content:center;align-items:stretch;min-width:0;margin-left:10%; }
+
+    /* COLUNA DO GRÁFICO: margem esquerda reduzida para aproximar do relógio */
+    .col-chart {
+      flex: 1;
+      justify-content: center;
+      align-items: stretch;
+      min-width: 0;
+      margin-left: 2%;
+      padding: 0 8px;
+    }
+
     .weather-bottom-row { display:flex;flex-direction:row;align-items:center;gap:20px;width:100%;flex-wrap:wrap; }
     #weather-description { font-size:29px;text-align:center; }
     .weather-temp-block { display:flex;align-items:center;gap:10px; }
@@ -58,14 +62,64 @@
     #weather-now-day { font-size:56px;font-weight:700;color:#fff;white-space:nowrap; }
     #clock { font-size:200px;font-weight:700;line-height:1; }
     #date { font-size:36px;font-weight:700;margin-top:8px;text-transform:uppercase;text-align:center; }
-    #day-chart-wrap { width:100%;padding:0 8px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:10px; }
-    .day-row { display:flex;flex-direction:row;align-items:center;gap:12px; }
-    .day-row-name { font-size:29px;font-weight:700;color:#ffffff;width:72px;flex-shrink:0; }
-    .day-row-icon { font-size:36px;flex-shrink:0;width:42px;text-align:center; }
-    .day-row-min { font-size:26px;color:rgba(255,255,255,0.65);width:52px;text-align:right;flex-shrink:0; }
-    .day-row-bar-wrap { flex:1;height:13px;background:rgba(255,255,255,0.15);border-radius:7px;position:relative;overflow:hidden; }
-    .day-row-bar { position:absolute;height:100%;border-radius:7px; }
-    .day-row-max { font-size:29px;font-weight:700;color:#ffffff;width:52px;text-align:left;flex-shrink:0; }
+
+    /* GRÁFICO */
+    #day-chart-wrap {
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px; /* era 10px */
+    }
+    .day-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px; /* era 12px */
+    }
+    .day-row-name {
+      font-size: 24px; /* era 29px */
+      font-weight: 700;
+      color: #ffffff;
+      width: 58px;     /* era 72px */
+      flex-shrink: 0;
+    }
+    .day-row-icon {
+      font-size: 30px; /* era 36px */
+      flex-shrink: 0;
+      width: 36px;     /* era 42px */
+      text-align: center;
+    }
+    .day-row-min {
+      font-size: 22px; /* era 26px */
+      color: rgba(255,255,255,0.65);
+      width: 44px;     /* era 52px */
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .day-row-bar-wrap {
+      flex: 1;
+      height: 14px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 7px;
+      position: relative;
+      overflow: hidden;
+      min-width: 40px; /* garante que nunca suma */
+    }
+    .day-row-bar {
+      position: absolute;
+      height: 100%;
+      border-radius: 7px;
+    }
+    .day-row-max {
+      font-size: 24px; /* era 29px */
+      font-weight: 700;
+      color: #ffffff;
+      width: 44px;     /* era 52px */
+      text-align: left;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -161,7 +215,6 @@
   }
 
   const weatherDesc = document.getElementById('weather-description');
-
   updateBackground(weatherDesc.textContent);
 
   const observer = new MutationObserver(() => {
