@@ -67,10 +67,6 @@ body {
     border-radius: var(--radius);
 }
 
-/* ========================= */
-/* AJUSTE DO ESPAÇAMENTO     */
-/* ========================= */
-
 .top-content {
     display: flex;
     width: 100%;
@@ -82,9 +78,7 @@ body {
     gap: 4px;
 }
 
-/* ========================= */
-/* COLUNAS                   */
-/* ========================= */
+/* COLUNAS */
 
 .col {
     display: flex;
@@ -93,7 +87,7 @@ body {
     box-sizing: border-box;
 }
 
-/* ESQUERDA — ORIGINAL */
+/* ESQUERDA */
 .col-weather {
     flex: 0 0 26%;
     justify-content: center;
@@ -107,25 +101,21 @@ body {
     justify-content: center;
     align-items: center;
     text-align: center;
-
-    /* removido espaço vazio */
     padding-right: 0;
 }
 
-/* DIREITA */
+/* DIREITA (AJUSTADO) */
 .col-chart {
     flex: 1;
     justify-content: center;
     align-items: stretch;
     min-width: 0;
 
-    /* aproxima gráfico do relógio */
-    margin-left: -55px;
+    /* ALTERAÇÃO AQUI */
+    margin-left: 10%;
 }
 
-/* ========================= */
-/* CLIMA                     */
-/* ========================= */
+/* CLIMA */
 
 .weather-bottom-row {
     display: flex;
@@ -170,9 +160,7 @@ body {
     white-space:nowrap;
 }
 
-/* ========================= */
-/* RELÓGIO                   */
-/* ========================= */
+/* RELÓGIO */
 
 #clock {
     font-size: 200px;
@@ -188,9 +176,7 @@ body {
     text-align: center;
 }
 
-/* ========================= */
-/* GRÁFICO                   */
-/* ========================= */
+/* GRÁFICO */
 
 #day-chart-wrap {
     width: 100%;
@@ -272,239 +258,87 @@ body {
 
         <div class="top-content">
 
-            <!-- COLUNA ESQUERDA -->
             <div class="col col-weather">
-
-                <div id="weather-description">
-                    PARCIALMENTE NUBLADO
-                </div>
+                <div id="weather-description">PARCIALMENTE NUBLADO</div>
 
                 <div class="weather-temp-block">
-
-                    <span id="weather-icon"
-                          class="mdi mdi-weather-cloudy">
-                    </span>
-
-                    <span id="weather-now">
-                        22°C
-                    </span>
-
+                    <span id="weather-icon" class="mdi mdi-weather-cloudy"></span>
+                    <span id="weather-now">22°C</span>
                 </div>
 
-                <!-- ORIGINAL -->
                 <div class="weather-bottom-row">
-
                     <div id="currency-section">
-
-                        <div id="usd">
-                            USD: R$ 5,68
-                        </div>
-
-                        <div id="eur">
-                            EUR: R$ 6,17
-                        </div>
-
+                        <div id="usd">USD: R$ 5,68</div>
+                        <div id="eur">EUR: R$ 6,17</div>
                     </div>
 
-                    <span id="weather-now-day">
-                        07-MAI
-                    </span>
-
+                    <span id="weather-now-day">07-MAI</span>
                 </div>
-
             </div>
 
-            <!-- RELÓGIO -->
             <div class="col col-clock">
-
-                <div id="clock">
-                    15:48:22
-                </div>
-
-                <div id="date">
-                    QUARTA-FEIRA, 07 MAIO
-                </div>
-
+                <div id="clock">15:48:22</div>
+                <div id="date">QUARTA-FEIRA, 07 MAIO</div>
             </div>
 
-            <!-- GRÁFICO -->
             <div class="col col-chart">
-
                 <div id="day-chart-wrap">
 
                     <div class="day-row">
-
-                        <div class="day-row-name">
-                            Qui.
-                        </div>
-
-                        <span class="day-row-icon mdi mdi-weather-cloudy"
-                              style="color:#cccccc">
-                        </span>
-
-                        <div class="day-row-min">
-                            18°
-                        </div>
-
+                        <div class="day-row-name">Qui.</div>
+                        <span class="day-row-icon mdi mdi-weather-cloudy"></span>
+                        <div class="day-row-min">18°</div>
                         <div class="day-row-bar-wrap">
-
-                            <div class="day-row-bar"
-                                 style="left:15%;
-                                        width:55%;
-                                        background:linear-gradient(
-                                        to right,
-                                        #FFD70099,
-                                        #FFD700)">
-                            </div>
-
+                            <div class="day-row-bar" style="left:15%; width:55%; background:linear-gradient(to right,#FFD70099,#FFD700)"></div>
                         </div>
-
-                        <div class="day-row-max">
-                            27°
-                        </div>
-
+                        <div class="day-row-max">27°</div>
                     </div>
 
                     <div class="day-row">
-
-                        <div class="day-row-name">
-                            Sex.
-                        </div>
-
-                        <span class="day-row-icon mdi mdi-weather-rainy"
-                              style="color:#74b9ff">
-                        </span>
-
-                        <div class="day-row-min">
-                            17°
-                        </div>
-
+                        <div class="day-row-name">Sex.</div>
+                        <span class="day-row-icon mdi mdi-weather-rainy"></span>
+                        <div class="day-row-min">17°</div>
                         <div class="day-row-bar-wrap">
-
-                            <div class="day-row-bar"
-                                 style="left:10%;
-                                        width:45%;
-                                        background:linear-gradient(
-                                        to right,
-                                        #74b9ff99,
-                                        #74b9ff)">
-                            </div>
-
+                            <div class="day-row-bar" style="left:10%; width:45%; background:linear-gradient(to right,#74b9ff99,#74b9ff)"></div>
                         </div>
-
-                        <div class="day-row-max">
-                            23°
-                        </div>
-
+                        <div class="day-row-max">23°</div>
                     </div>
 
                     <div class="day-row">
-
-                        <div class="day-row-name">
-                            Sáb.
-                        </div>
-
-                        <span class="day-row-icon mdi mdi-weather-sunny"
-                              style="color:#FFD700">
-                        </span>
-
-                        <div class="day-row-min">
-                            19°
-                        </div>
-
+                        <div class="day-row-name">Sáb.</div>
+                        <span class="day-row-icon mdi mdi-weather-sunny"></span>
+                        <div class="day-row-min">19°</div>
                         <div class="day-row-bar-wrap">
-
-                            <div class="day-row-bar"
-                                 style="left:20%;
-                                        width:60%;
-                                        background:linear-gradient(
-                                        to right,
-                                        #FF8C0099,
-                                        #FF8C00)">
-                            </div>
-
+                            <div class="day-row-bar" style="left:20%; width:60%; background:linear-gradient(to right,#FF8C0099,#FF8C00)"></div>
                         </div>
-
-                        <div class="day-row-max">
-                            31°
-                        </div>
-
+                        <div class="day-row-max">31°</div>
                     </div>
 
                     <div class="day-row">
-
-                        <div class="day-row-name">
-                            Dom.
-                        </div>
-
-                        <span class="day-row-icon mdi mdi-weather-partly-cloudy"
-                              style="color:#cccccc">
-                        </span>
-
-                        <div class="day-row-min">
-                            20°
-                        </div>
-
+                        <div class="day-row-name">Dom.</div>
+                        <span class="day-row-icon mdi mdi-weather-partly-cloudy"></span>
+                        <div class="day-row-min">20°</div>
                         <div class="day-row-bar-wrap">
-
-                            <div class="day-row-bar"
-                                 style="left:25%;
-                                        width:50%;
-                                        background:linear-gradient(
-                                        to right,
-                                        #90EE9099,
-                                        #90EE90)">
-                            </div>
-
+                            <div class="day-row-bar" style="left:25%; width:50%; background:linear-gradient(to right,#90EE9099,#90EE90)"></div>
                         </div>
-
-                        <div class="day-row-max">
-                            28°
-                        </div>
-
+                        <div class="day-row-max">28°</div>
                     </div>
 
                     <div class="day-row">
-
-                        <div class="day-row-name">
-                            Seg.
-                        </div>
-
-                        <span class="day-row-icon mdi mdi-weather-sunny"
-                              style="color:#FFD700">
-                        </span>
-
-                        <div class="day-row-min">
-                            21°
-                        </div>
-
+                        <div class="day-row-name">Seg.</div>
+                        <span class="day-row-icon mdi mdi-weather-sunny"></span>
+                        <div class="day-row-min">21°</div>
                         <div class="day-row-bar-wrap">
-
-                            <div class="day-row-bar"
-                                 style="left:30%;
-                                        width:58%;
-                                        background:linear-gradient(
-                                        to right,
-                                        #FF8C0099,
-                                        #FF8C00)">
-                            </div>
-
+                            <div class="day-row-bar" style="left:30%; width:58%; background:linear-gradient(to right,#FF8C0099,#FF8C00)"></div>
                         </div>
-
-                        <div class="day-row-max">
-                            32°
-                        </div>
-
+                        <div class="day-row-max">32°</div>
                     </div>
 
                 </div>
-
             </div>
 
         </div>
-
     </div>
-
 </div>
 
 </body>
