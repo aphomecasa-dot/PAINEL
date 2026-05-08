@@ -29,7 +29,17 @@
       color: #0a1a3a !important;
     }
 
-    #bg-rain-canvas { position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0; }
+    #bg-rain-canvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
+    }
+    #top-rain-canvas {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 2; /* FIX: z-index maior que o conteúdo */
+      border-radius: var(--radius);
+    }
 
     .layout {
       padding: 25px;
@@ -49,15 +59,9 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       position: relative;
-      overflow: hidden;
+      /* FIX: removido overflow: hidden para não cortar o canvas */
     }
 
-    #top-rain-canvas {
-      position:absolute;top:0;left:0;width:100%;height:100%;
-      pointer-events:none;z-index:0;border-radius:var(--radius);
-    }
-
-    /* ── ESQUERDA: relógio ── */
     .col-clock {
       position: relative;
       z-index: 1;
@@ -69,42 +73,23 @@
       padding: 20px 10px 20px 30px;
       box-sizing: border-box;
     }
-    #clock {
-      font-size: clamp(68px, 15vw, 285px);
-      font-weight: 700;
-      line-height: 1;
-      white-space: nowrap;
-    }
-    #date {
-      font-size: 30px;
-      font-weight: 700;
-      margin-top: 8px;
-      text-transform: uppercase;
-      text-align: center;
-    }
+    #clock { font-size: clamp(68px, 15vw, 285px); font-weight: 700; line-height: 1; white-space: nowrap; }
+    #date  { font-size: 30px; font-weight: 700; margin-top: 8px; text-transform: uppercase; text-align: center; }
 
-    /* ── DIREITA: centralizada verticalmente ── */
     .col-right {
       position: relative;
       z-index: 1;
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: center; /* centraliza verticalmente */
-      align-items: center;     /* centraliza horizontalmente */
+      justify-content: center;
+      align-items: center;
       padding: 20px;
       box-sizing: border-box;
       gap: 12px;
     }
 
-    /* CLIMA: centralizado */
-    .weather-block {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      width: 100%;
-    }
+    .weather-block { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
     #weather-description { font-size: 26px; font-weight: 600; text-align: center; }
     .weather-temp-block { display: flex; align-items: center; gap: 6px; }
     #weather-icon { font-size: 52px; }
@@ -112,31 +97,26 @@
     #weather-now-day { font-size: 36px; font-weight: 700; white-space: nowrap; text-align: center; }
     #currency-section { font-size: 22px; display: flex; gap: 14px; justify-content: center; }
 
-    .divider {
-      width: 100%;
-      height: 1px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 1px;
-    }
+    .divider { width: 100%; height: 1px; background: rgba(255,255,255,0.2); border-radius: 1px; }
 
-    /* GRÁFICO */
-    #day-chart-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      width: 100%;
-    }
+    #day-chart-wrap { display: flex; flex-direction: column; gap: 14px; width: 100%; }
     .day-row { display: flex; flex-direction: row; align-items: center; gap: 8px; }
     .day-row-name { font-size: 22px; font-weight: 700; color: #fff; width: 54px; flex-shrink: 0; }
     .day-row-icon { font-size: 28px; flex-shrink: 0; width: 34px; text-align: center; }
-    .day-row-min { font-size: 20px; color: rgba(255,255,255,0.65); width: 42px; text-align: right; flex-shrink: 0; }
+    .day-row-min  { font-size: 20px; color: rgba(255,255,255,0.65); width: 42px; text-align: right; flex-shrink: 0; }
     .day-row-bar-wrap { flex: 1; height: 13px; background: rgba(255,255,255,0.15); border-radius: 7px; position: relative; overflow: hidden; min-width: 40px; }
-    .day-row-bar { position: absolute; height: 100%; border-radius: 7px; }
-    .day-row-max { font-size: 22px; font-weight: 700; color: #fff; width: 42px; text-align: left; flex-shrink: 0; }
+    .day-row-bar  { position: absolute; height: 100%; border-radius: 7px; }
+    .day-row-max  { font-size: 22px; font-weight: 700; color: #fff; width: 42px; text-align: left; flex-shrink: 0; }
+
+    /* Overlay de transparência quando chove */
+    .top { transition: background 0.8s ease; }
+    .top.rain-overlay { background: rgba(0, 0, 0, 0.70) !important; }
   </style>
 </head>
 <body>
+
 <canvas id="bg-rain-canvas"></canvas>
+
 <div class="layout">
   <div class="top">
     <canvas id="top-rain-canvas"></canvas>
@@ -147,95 +127,333 @@
     </div>
 
     <div class="col-right">
-
       <div class="weather-block">
-        <div id="weather-description">PARCIALMENTE NUBLADO</div>
+        <div id="weather-description">--</div>
         <div class="weather-temp-block">
-          <span id="weather-icon" class="mdi mdi-weather-cloudy"></span>
-          <span id="weather-now">22°C</span>
+          <span id="weather-icon" class="mdi"></span>
+          <span id="weather-now">--°C</span>
         </div>
-        <span id="weather-now-day">07-MAI</span>
+        <span id="weather-now-day">--</span>
         <div id="currency-section">
-          <div id="usd">USD: R$ 5,68</div>
-          <div id="eur">EUR: R$ 6,17</div>
+          <div id="usd">USD: --</div>
+          <div id="eur">EUR: --</div>
         </div>
       </div>
-
       <div class="divider"></div>
-
       <div id="day-chart-wrap"></div>
-
     </div>
   </div>
 </div>
 
 <script>
-  const DIAS_SEMANA_FULL = ['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado'];
-  const DIAS_ABREV = ['Dom.','Seg.','Ter.','Qua.','Qui.','Sex.','Sáb.'];
-  const MESES = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+  // ── Coordenadas: Rua Brentano 306, Vila Leopoldina, SP ──
+  const LAT     = -23.5189;
+  const LON     = -46.7334;
+  const API_KEY = "a1914a0291e97791460f4558d57cf359";
 
+  const DIAS_SEMANA_FULL = ['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado'];
+  const DIAS_ABREV       = ['Dom.','Seg.','Ter.','Qua.','Qui.','Sex.','Sáb.'];
+  const MESES            = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+  // ══════════════════════════════════════════
+  //  MOTOR DE CHUVA
+  // ══════════════════════════════════════════
+  const DPR          = window.devicePixelRatio || 1;
+  const RAIN_DENSITY = 0.9;
+  const MAX_DROPS    = 300;
+
+  const rainCanvases = [
+    { id: 'bg-rain-canvas',  el: null, ctx: null, w: 0, h: 0 },
+    { id: 'top-rain-canvas', el: null, ctx: null, w: 0, h: 0 }
+  ];
+
+  const eng = {
+    drops: {}, splashes: {}, glassDrops: {},
+    lastTime: performance.now(), running: false, active: false
+  };
+
+  // FIX: inicializa arrays antes de qualquer acesso
+  rainCanvases.forEach(c => {
+    eng.drops[c.id]      = [];
+    eng.splashes[c.id]   = [];
+    eng.glassDrops[c.id] = [];
+  });
+
+  function initRainCanvases() {
+    rainCanvases.forEach(c => {
+      c.el  = document.getElementById(c.id);
+      if (!c.el) return;
+      c.ctx = c.el.getContext('2d');
+    });
+    resizeRain();
+    window.addEventListener('resize', resizeRain);
+  }
+
+  function resizeRain() {
+    rainCanvases.forEach(c => {
+      if (!c.el) return;
+
+      // FIX: para o bg-canvas usa window; para o top-canvas usa o pai
+      let w, h;
+      if (c.id === 'bg-rain-canvas') {
+        w = window.innerWidth;
+        h = window.innerHeight;
+      } else {
+        const parent = c.el.parentElement;
+        w = parent ? parent.offsetWidth  : window.innerWidth;
+        h = parent ? parent.offsetHeight : window.innerHeight;
+      }
+
+      w = Math.max(1, Math.floor(w));
+      h = Math.max(1, Math.floor(h));
+
+      c.el.width  = Math.floor(w * DPR);
+      c.el.height = Math.floor(h * DPR);
+      c.el.style.width  = w + 'px';
+      c.el.style.height = h + 'px';
+      c.w = c.el.width;
+      c.h = c.el.height;
+      c.ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+      // FIX: só faz seed de gotas se chuva já estiver ativa
+      if (eng.active) {
+        seedDrops(c.id, Math.floor(Math.min(MAX_DROPS, 120 * RAIN_DENSITY * (w / 800))));
+      }
+    });
+  }
+
+  function mkDrop(cid, randomY = false) {
+    const c = rainCanvases.find(x => x.id === cid);
+    const w = c ? c.w / DPR : window.innerWidth;
+    const h = c ? c.h / DPR : 600;
+    const layer = Math.random();
+    const speed = 350 + layer * 550;
+    const angle = (-12 + Math.random() * 8) * (Math.PI / 180);
+    return {
+      x: Math.random() * (w + 100),
+      y: randomY ? Math.random() * h : -20 - Math.random() * 100,
+      vx: Math.sin(angle) * speed, vy: Math.cos(angle) * speed,
+      ay: 80 + layer * 120, length: 10 + layer * 35,
+      width: 0.8 + layer * 2.2, alpha: 0.18 + layer * 0.55, layer
+    };
+  }
+
+  function seedDrops(cid, count) {
+    const arr = eng.drops[cid];
+    while (arr.length < count) arr.push(mkDrop(cid, true));
+    while (arr.length > count) arr.pop();
+  }
+
+  function mkGlass(w, h) {
+    const r = 4 + Math.random() * 14;
+    return {
+      x: Math.random() * w, y: -r - Math.random() * h * 0.5,
+      r, vy: 20 + Math.random() * 60, trail: [],
+      alpha: 0.25 + Math.random() * 0.45,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.8 + Math.random() * 1.5,
+      wobbleAmp: 0.4 + Math.random() * 1.2
+    };
+  }
+
+  function seedGlass(cid) {
+    const c = rainCanvases.find(x => x.id === cid);
+    if (!c) return;
+    const w = c.w / DPR, h = c.h / DPR;
+    const arr = eng.glassDrops[cid];
+    while (arr.length < 18) arr.push(mkGlass(w, h));
+  }
+
+  function createSplash(x, y, cid) {
+    const arr = eng.splashes[cid];
+    const count = 4 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < count; i++) {
+      const angle = -Math.PI + Math.random() * Math.PI;
+      const speed = 40 + Math.random() * 120;
+      arr.push({
+        x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 60,
+        ay: 280, r: 1 + Math.random() * 2.5,
+        alpha: 0.6 + Math.random() * 0.4, life: 1.0
+      });
+    }
+  }
+
+  function physicsStep(dt) {
+    rainCanvases.forEach(c => {
+      if (!c.el) return;
+      const cw = c.w / DPR, ch = c.h / DPR;
+
+      const drops = eng.drops[c.id];
+      for (let i = 0; i < drops.length; i++) {
+        const d = drops[i];
+        d.vy += d.ay * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+        if (d.y > ch + 5) {
+          if (eng.active && Math.random() < 0.3) createSplash(d.x, ch, c.id);
+          drops[i] = mkDrop(c.id, false);
+        } else if (d.x < -60 || d.x > cw + 60) {
+          drops[i] = mkDrop(c.id, false);
+        }
+      }
+
+      const splashes = eng.splashes[c.id];
+      for (let i = splashes.length - 1; i >= 0; i--) {
+        const s = splashes[i];
+        s.vx *= 0.92; s.vy += s.ay * dt;
+        s.x += s.vx * dt; s.y += s.vy * dt;
+        s.life -= dt * 2.5;
+        if (s.life <= 0) splashes.splice(i, 1);
+      }
+
+      const glass = eng.glassDrops[c.id];
+      for (let i = 0; i < glass.length; i++) {
+        const g = glass[i];
+        g.wobble += g.wobbleSpeed * dt;
+        g.x += Math.sin(g.wobble) * g.wobbleAmp * dt * 30;
+        g.vy += 8 * dt; g.y += g.vy * dt;
+        g.trail.push({ x: g.x, y: g.y });
+        if (g.trail.length > 18) g.trail.shift();
+        if (g.y - g.r > ch) glass[i] = mkGlass(cw, ch);
+      }
+
+    });
+  }
+
+  function drawRain(ctx, c) {
+    const drops = eng.drops[c.id];
+    ctx.save(); ctx.lineCap = 'round';
+    drops.forEach(d => {
+      const angle = Math.atan2(d.vx, d.vy);
+      const tx = d.x - Math.sin(angle) * d.length;
+      const ty = d.y - Math.cos(angle) * d.length;
+      const grad = ctx.createLinearGradient(tx, ty, d.x, d.y);
+      grad.addColorStop(0, `rgba(174,214,241,0)`);
+      grad.addColorStop(0.4, `rgba(174,214,241,${d.alpha * 0.4})`);
+      grad.addColorStop(1, `rgba(255,255,255,${d.alpha})`);
+      ctx.beginPath(); ctx.lineWidth = d.width; ctx.strokeStyle = grad;
+      ctx.moveTo(tx, ty); ctx.lineTo(d.x, d.y); ctx.stroke();
+    });
+
+    eng.splashes[c.id].forEach(s => {
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,230,255,${s.alpha * s.life})`; ctx.fill();
+    });
+
+    eng.glassDrops[c.id].forEach(g => {
+      if (g.trail.length > 2) {
+        ctx.beginPath(); ctx.moveTo(g.trail[0].x, g.trail[0].y);
+        g.trail.forEach((t, i) => { if (i) ctx.lineTo(t.x, t.y); });
+        ctx.strokeStyle = `rgba(180,220,255,${g.alpha * 0.25})`;
+        ctx.lineWidth = g.r * 0.45; ctx.lineCap = 'round'; ctx.stroke();
+      }
+      const grd = ctx.createRadialGradient(g.x - g.r * 0.3, g.y - g.r * 0.3, g.r * 0.1, g.x, g.y, g.r);
+      grd.addColorStop(0, `rgba(255,255,255,${g.alpha * 0.9})`);
+      grd.addColorStop(0.4, `rgba(180,220,255,${g.alpha * 0.55})`);
+      grd.addColorStop(1, `rgba(100,170,230,${g.alpha * 0.2})`);
+      ctx.beginPath(); ctx.ellipse(g.x, g.y, g.r, g.r * 1.25, 0, 0, Math.PI * 2);
+      ctx.fillStyle = grd; ctx.fill();
+      ctx.beginPath(); ctx.arc(g.x - g.r * 0.28, g.y - g.r * 0.3, g.r * 0.28, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${g.alpha * 0.6})`; ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  function drawFrame() {
+    rainCanvases.forEach(c => {
+      if (!c.ctx) return;
+      c.ctx.clearRect(0, 0, c.w, c.h);
+      if (eng.active) drawRain(c.ctx, c);
+    });
+  }
+
+  function startEngine() {
+    if (eng.running) return;
+    eng.running = true;
+    eng.lastTime = performance.now();
+    function step(now) {
+      const dt = Math.min(0.05, (now - eng.lastTime) / 1000);
+      eng.lastTime = now;
+      physicsStep(dt);
+      drawFrame();
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // FIX: detecção de chuva mais robusta — verifica code numérico também
+  function isRainCondition(condition, weatherId) {
+    const c = (condition || '').toLowerCase();
+    const id = weatherId || 0;
+    // OpenWeatherMap: 2xx = thunderstorm, 3xx = drizzle, 5xx = rain
+    if (id >= 200 && id < 600) return true;
+    return c.includes('rain') || c.includes('drizzle') || c.includes('thunderstorm');
+  }
+
+  function setRainEffect(condition, weatherId) {
+    const isRain = isRainCondition(condition, weatherId);
+    eng.active = isRain;
+
+    // Toggle overlay de transparência no quadrante
+    const topEl = document.querySelector('.top');
+    if (topEl) topEl.classList.toggle('rain-overlay', isRain);
+
+    rainCanvases.forEach(c => {
+      if (!c.el) return;
+
+      if (isRain) {
+        const w = c.w / DPR;
+        const count = Math.floor(Math.min(MAX_DROPS, 160 * RAIN_DENSITY * (w / 800)));
+        seedDrops(c.id, Math.max(80, count));
+        seedGlass(c.id);
+      } else {
+        eng.drops[c.id]      = [];
+        eng.glassDrops[c.id] = [];
+        eng.splashes[c.id]   = [];
+      }
+    });
+
+    console.log(`[Rain] active=${isRain}, condition="${condition}", id=${weatherId}`);
+  }
+
+  // ══════════════════════════════════════════
+  //  RELÓGIO
+  // ══════════════════════════════════════════
   function updateClock() {
     const now = new Date();
-    const h = String(now.getHours()).padStart(2,'0');
-    const m = String(now.getMinutes()).padStart(2,'0');
-    const s = String(now.getSeconds()).padStart(2,'0');
-    document.getElementById('clock').textContent = `${h}:${m}:${s}`;
-    const dia = String(now.getDate()).padStart(2,'0');
-    const mes = MESES[now.getMonth()];
-    document.getElementById('date').textContent = `${DIAS_SEMANA_FULL[now.getDay()]}, ${dia} ${mes}`;
+    document.getElementById('clock').textContent =
+      String(now.getHours()).padStart(2,'0') + ':' +
+      String(now.getMinutes()).padStart(2,'0') + ':' +
+      String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('date').textContent =
+      DIAS_SEMANA_FULL[now.getDay()] + ', ' +
+      String(now.getDate()).padStart(2,'0') + ' ' +
+      MESES[now.getMonth()];
   }
   updateClock();
   setInterval(updateClock, 1000);
 
-  const forecastData = [
-    { min: 18, max: 27, icon: 'mdi-weather-cloudy',       grad: ['#FFD70099','#FFD700'] },
-    { min: 17, max: 23, icon: 'mdi-weather-rainy',         grad: ['#74b9ff99','#74b9ff'] },
-    { min: 19, max: 31, icon: 'mdi-weather-sunny',         grad: ['#FF8C0099','#FF8C00'] },
-    { min: 20, max: 28, icon: 'mdi-weather-partly-cloudy', grad: ['#90EE9099','#90EE90'] },
-    { min: 21, max: 32, icon: 'mdi-weather-sunny',         grad: ['#FF8C0099','#FF8C00'] },
-  ];
-
-  function buildChart() {
-    const wrap = document.getElementById('day-chart-wrap');
-    wrap.innerHTML = '';
-    const allMaxes = forecastData.map(d => d.max);
-    const allMins  = forecastData.map(d => d.min);
-    const globalMin = Math.min(...allMins);
-    const globalMax = Math.max(...allMaxes);
-    const range = globalMax - globalMin || 1;
-    const today = new Date();
-
-    forecastData.forEach((d, i) => {
-      const dia = new Date(today);
-      dia.setDate(today.getDate() + i + 1);
-      const nomeDia = DIAS_ABREV[dia.getDay()];
-      const leftPct  = ((d.min - globalMin) / range * 80).toFixed(1);
-      const widthPct = ((d.max - d.min)     / range * 80).toFixed(1);
-
-      const row = document.createElement('div');
-      row.className = 'day-row';
-      row.innerHTML = `
-        <div class="day-row-name">${nomeDia}</div>
-        <span class="day-row-icon mdi ${d.icon}"></span>
-        <div class="day-row-min">${d.min}°</div>
-        <div class="day-row-bar-wrap">
-          <div class="day-row-bar" style="left:${leftPct}%;width:${widthPct}%;background:linear-gradient(to right,${d.grad[0]},${d.grad[1]})"></div>
-        </div>
-        <div class="day-row-max">${d.max}°</div>
-      `;
-      wrap.appendChild(row);
-    });
+  // ══════════════════════════════════════════
+  //  ÍCONE
+  // ══════════════════════════════════════════
+  function weatherIcon(code) {
+    const map = {
+      'Clear':'mdi-weather-sunny','Clouds':'mdi-weather-cloudy',
+      'Rain':'mdi-weather-rainy','Drizzle':'mdi-weather-partly-rainy',
+      'Thunderstorm':'mdi-weather-lightning','Snow':'mdi-weather-snowy',
+      'Mist':'mdi-weather-fog','Fog':'mdi-weather-fog','Haze':'mdi-weather-fog'
+    };
+    return map[code] || 'mdi-weather-cloudy';
   }
-  buildChart();
 
+  // ══════════════════════════════════════════
+  //  FUNDO DINÂMICO
+  // ══════════════════════════════════════════
   const CLOUDY_KEYWORDS = [
-    'nublado','nuvens','nevoeiro','encoberto','overcast',
-    'cloudy','clouds','fog','mist','haze','nebuloso',
-    'parcialmente nublado','partly cloudy','mostly cloudy',
-    'levemente nublado','algumas nuvens','few clouds'
+    'nublado','nuvens','nevoeiro','encoberto','overcast','chuva','garoa','trovoada',
+    'cloudy','clouds','fog','mist','haze','nebuloso','rain','drizzle','thunderstorm',
+    'parcialmente nublado','partly cloudy','mostly cloudy','levemente nublado','algumas nuvens','few clouds'
   ];
-  function isCloudyCondition(d) {
-    const l = d.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  function isCloudyCondition(desc) {
+    const l = desc.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     return CLOUDY_KEYWORDS.some(k => l.includes(k.normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
   }
   function updateBackground(desc) {
@@ -247,10 +465,134 @@
       document.body.classList.remove('cloudy-theme');
     }
   }
-  const weatherDesc = document.getElementById('weather-description');
-  updateBackground(weatherDesc.textContent);
-  new MutationObserver(() => updateBackground(weatherDesc.textContent))
-    .observe(weatherDesc, { childList:true, characterData:true, subtree:true });
+
+  // ══════════════════════════════════════════
+  //  COTAÇÃO
+  // ══════════════════════════════════════════
+  async function loadCurrency() {
+    try {
+      const res  = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      const data = await res.json();
+      const brl  = data.rates.BRL;
+      const eur  = data.rates.EUR;
+      document.getElementById('usd').textContent = `USD: R$ ${brl.toFixed(2)}`;
+      document.getElementById('eur').textContent = `EUR: R$ ${(brl / eur).toFixed(2)}`;
+    } catch(e) {
+      document.getElementById('usd').textContent = 'USD: --';
+      document.getElementById('eur').textContent = 'EUR: --';
+    }
+  }
+  loadCurrency();
+  setInterval(loadCurrency, 300000);
+
+  // ══════════════════════════════════════════
+  //  GRÁFICO DOS PRÓXIMOS 5 DIAS
+  // ══════════════════════════════════════════
+  function buildChart(dailyKeys, dailyMap) {
+    const wrap = document.getElementById('day-chart-wrap');
+    wrap.innerHTML = '';
+    const allMins = dailyKeys.map(d => Math.min(...dailyMap[d].map(i => i.main.temp_min)));
+    const allMaxs = dailyKeys.map(d => Math.max(...dailyMap[d].map(i => i.main.temp_max)));
+    const globalMin = Math.min(...allMins);
+    const globalMax = Math.max(...allMaxs);
+    const range = globalMax - globalMin || 1;
+
+    dailyKeys.forEach(d => {
+      const items = dailyMap[d];
+      const dMin  = Math.round(Math.min(...items.map(i => i.main.temp_min)));
+      const dMax  = Math.round(Math.max(...items.map(i => i.main.temp_max)));
+      const noon  = items.reduce((best, cur) => {
+        const h = new Date(cur.dt * 1000).getHours();
+        return Math.abs(h - 12) < Math.abs(new Date(best.dt * 1000).getHours() - 12) ? cur : best;
+      });
+      const ic   = weatherIcon(noon.weather[0].main);
+      let barColor = '#74b9ff';
+      if (dMax >= 20 && dMax < 25) barColor = '#FFD700';
+      if (dMax >= 25) barColor = '#FF8C00';
+
+      const leftPct  = ((dMin - globalMin) / range * 80).toFixed(1);
+      const widthPct = ((dMax - dMin)      / range * 80).toFixed(1);
+      const dt       = new Date(d + 'T12:00:00');
+      const dayName  = DIAS_ABREV[dt.getDay()];
+
+      const row = document.createElement('div');
+      row.className = 'day-row';
+      row.innerHTML = `
+        <div class="day-row-name">${dayName}</div>
+        <span class="day-row-icon mdi ${ic}"></span>
+        <div class="day-row-min">${dMin}°</div>
+        <div class="day-row-bar-wrap">
+          <div class="day-row-bar" style="left:${leftPct}%;width:${widthPct}%;background:linear-gradient(to right,${barColor}99,${barColor})"></div>
+        </div>
+        <div class="day-row-max">${dMax}°</div>
+      `;
+      wrap.appendChild(row);
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  CLIMA VIA API
+  // ══════════════════════════════════════════
+  async function loadWeather(attempt = 1) {
+    try {
+      const [resNow, resForecast] = await Promise.all([
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&units=metric&lang=pt_br&appid=${API_KEY}`),
+        fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${LAT}&lon=${LON}&units=metric&lang=pt_br&appid=${API_KEY}`)
+      ]);
+      if (!resNow.ok || !resForecast.ok) throw new Error('HTTP error');
+
+      const nowData      = await resNow.json();
+      const forecastData = await resForecast.json();
+
+      const temp        = Math.round(nowData.main.temp);
+      const condition   = nowData.weather[0].main;
+      const weatherId   = nowData.weather[0].id; // FIX: pega o ID numérico
+      const description = nowData.weather[0].description || '';
+      const prettyDesc  = description.charAt(0).toUpperCase() + description.slice(1);
+
+      document.getElementById('weather-now').textContent  = `${temp}°C`;
+      document.getElementById('weather-description').textContent = prettyDesc;
+      document.getElementById('weather-icon').className   = 'mdi ' + weatherIcon(condition);
+
+      const nowDate = new Date();
+      const dia = String(nowDate.getDate()).padStart(2,'0');
+      const mes = nowDate.toLocaleDateString('pt-BR',{month:'short'}).toUpperCase().replace('.','');
+      document.getElementById('weather-now-day').textContent = `${dia}-${mes}`;
+
+      updateBackground(prettyDesc);
+      setRainEffect(condition, weatherId); // FIX: passa o ID numérico também
+
+      const todayStr = new Date().toISOString().slice(0,10);
+      const dailyMap = {};
+      forecastData.list.forEach(item => {
+        const d = item.dt_txt.slice(0,10);
+        if (!dailyMap[d]) dailyMap[d] = [];
+        dailyMap[d].push(item);
+      });
+      const dailyKeys = Object.keys(dailyMap).filter(d => d > todayStr).slice(0,5);
+      buildChart(dailyKeys, dailyMap);
+
+    } catch(e) {
+      console.error(`Erro loadWeather (tentativa ${attempt}):`, e);
+      if (attempt < 4) {
+        const delays = [5000, 15000, 30000];
+        document.getElementById('weather-description').textContent = 'Reconectando...';
+        setTimeout(() => loadWeather(attempt + 1), delays[attempt - 1]);
+      } else {
+        document.getElementById('weather-description').textContent = 'Sem conexão';
+        setTimeout(() => loadWeather(1), 120000);
+      }
+    }
+  }
+
+  // ── Init ──
+  // FIX: inicia tudo após o layout estar pronto
+  window.addEventListener('load', () => {
+    initRainCanvases();
+    startEngine();
+    loadWeather();
+    setInterval(() => loadWeather(1), 300000);
+  });
 </script>
 </body>
 </html>
