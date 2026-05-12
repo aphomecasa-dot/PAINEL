@@ -16,25 +16,15 @@
       overflow: hidden;
     }
 
+    /* cloudy-theme: só afeta topo, NÃO afeta gráfico de barras */
     body.cloudy-theme #clock,
     body.cloudy-theme #date,
     body.cloudy-theme #weather-description,
     body.cloudy-theme #weather-now,
     body.cloudy-theme #weather-icon,
-    body.cloudy-theme #weather-now-day,
     body.cloudy-theme #usd,
-    body.cloudy-theme #eur,
-    body.cloudy-theme .day-row-name,
-    body.cloudy-theme .day-row-icon,
-    body.cloudy-theme .day-row-min,
-    body.cloudy-theme .day-row-max {
+    body.cloudy-theme #eur {
       color: #0a1a3a !important;
-    }
-    body.cloudy-theme .day-row-bar-wrap {
-      background: rgba(10,26,58,0.15) !important;
-    }
-    body.cloudy-theme .divider {
-      background: rgba(10,26,58,0.2) !important;
     }
     body.cloudy-theme .top-info-bar {
       background: rgba(10,26,58,0.12) !important;
@@ -102,7 +92,6 @@
     }
     #weather-icon    { font-size: 76px; line-height: 1; }
     #weather-now     { font-size: 76px; font-weight: 700; line-height: 1; }
-    #weather-now-day { font-size: 44px; font-weight: 600; opacity: 0.85; }
     #weather-description { font-size: 44px; font-weight: 600; }
 
     .info-bar-right {
@@ -155,7 +144,7 @@
       min-height: 180px;
     }
 
-    /* Bloco esquerdo: temperatura — posição absoluta para não deslocar o gráfico */
+    /* Bloco esquerdo: temperatura — posição absoluta */
     .chart-side-left {
       position: absolute;
       left: 2%;
@@ -164,7 +153,7 @@
       align-items: center;
       justify-content: center;
       padding: 14px 18px 20px 18px;
-      background: rgba(0, 0, 0, 0.30);
+      background: rgba(0, 0, 0, 0.60);
       border-radius: var(--radius);
     }
     .chart-side-left .cs-temp {
@@ -174,18 +163,19 @@
       color: #ffffff;
     }
 
-    /* Bloco central: gráfico de barras — quadrante próprio */
+    /* Bloco central: gráfico de barras */
     .chart-center {
       flex: 0 1 auto;
       display: flex;
       flex-direction: column;
-      padding: 14px 24px 20px 24px;
+      padding: 14px 31px 26px 24px;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.30);
+      background: rgba(0, 0, 0, 0.60);
       border-radius: var(--radius);
       min-width: 0;
       width: fit-content;
       align-self: center;
+      margin-left: 10%;
     }
 
     .divider {
@@ -200,17 +190,16 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      width: 55vw; /* largura fixa proporcional à tela */
+      width: 55vw;
     }
     .day-row { display: flex; flex-direction: row; align-items: center; gap: 8px; }
-    .day-row-name { font-size: 24px; font-weight: 700; color: #fff; width: 60px; flex-shrink: 0; }
-    .day-row-icon { font-size: 31px; flex-shrink: 0; width: 36px; text-align: center; }
-    /* min e max sem color fixo — recebem cor via JS inline style */
-    .day-row-min  { font-size: 22px; width: 46px; text-align: right; flex-shrink: 0; }
-    .day-row-bar-wrap { flex: 1; height: 14px; background: rgba(255,255,255,0.15); border-radius: 7px; position: relative; overflow: hidden; min-width: 40px; }
+    /* Sempre branco — não afetado pelo cloudy-theme */
+    .day-row-name { font-size: 31px; font-weight: 700; color: #fff !important; width: 78px; flex-shrink: 0; }
+    .day-row-icon { font-size: 40px; flex-shrink: 0; width: 47px; text-align: center; }
+    .day-row-min  { font-size: 29px; font-weight: 700; width: 60px; text-align: right; flex-shrink: 0; }
+    .day-row-bar-wrap { flex: 1; height: 18px; background: rgba(255,255,255,0.15); border-radius: 7px; position: relative; overflow: hidden; min-width: 40px; }
     .day-row-bar  { position: absolute; height: 100%; border-radius: 7px; }
-    /* max sem color fixo — recebe cor via JS inline style */
-    .day-row-max  { font-size: 24px; font-weight: 700; width: 50px; text-align: left; flex-shrink: 0; }
+    .day-row-max  { font-size: 31px; font-weight: 700; width: 65px; text-align: left; flex-shrink: 0; }
 
     .day-row-icon.icon-rain  { color: #7ecbff !important; }
     .day-row-icon.icon-clear { color: #FFD700 !important; }
@@ -249,18 +238,13 @@
     </div>
 
     <div class="chart-section">
-
-      <!-- Esquerda: só temperatura atual -->
       <div class="chart-side-left">
         <span id="chart-weather-temp" class="cs-temp">--°C</span>
       </div>
-
-      <!-- Centro: gráfico de barras (ocupa todo o restante) -->
       <div class="chart-center">
         <div class="divider"></div>
         <div id="day-chart-wrap"></div>
       </div>
-
     </div>
 
   </div>
@@ -319,9 +303,7 @@
   const MAX_DROPS    = 300;
 
   const rainCanvases = [{ id: 'top-rain-canvas', el: null, ctx: null, w: 0, h: 0 }];
-
   const eng = { drops: {}, splashes: {}, lastTime: performance.now(), running: false, active: false };
-
   rainCanvases.forEach(c => { eng.drops[c.id] = []; eng.splashes[c.id] = []; });
 
   function initRainCanvases() {
@@ -537,15 +519,15 @@
     const globalMax = Math.max(...allMaxs);
     const range = globalMax - globalMin || 1;
 
-    // Interpola cor azul→vermelho baseado na temperatura relativa
+    // Cores brilhantes azul→vermelho — visíveis em qualquer transparência
     function tempColor(t) {
       const pct = Math.max(0, Math.min(1, (t - globalMin) / range));
       const stops = [
-        [0,    [116, 185, 255]],  // azul claro
-        [0.35, [0,   210, 200]],  // ciano
-        [0.55, [85,  220, 85 ]],  // verde
-        [0.75, [255, 200, 0  ]],  // amarelo
-        [1.0,  [255, 80,  0  ]],  // vermelho
+        [0,    [180, 220, 255]],  // azul bem claro
+        [0.35, [0,   240, 220]],  // ciano brilhante
+        [0.55, [120, 255, 120]],  // verde claro
+        [0.75, [255, 220, 50 ]],  // amarelo brilhante
+        [1.0,  [255, 100, 30 ]],  // laranja/vermelho
       ];
       let lo = stops[0], hi = stops[stops.length - 1];
       for (let s = 0; s < stops.length - 1; s++) {
@@ -840,10 +822,6 @@
 
   // ══════════════════════════════════════════
   //  PAPAI NOEL
-  //  · passa ATRÁS dos números (z-index: 0)
-  //  · esquerda → direita, tela toda
-  //  · abaixo da data (~78% da altura)
-  //  · só quando snowRunning = true
   // ══════════════════════════════════════════
   const santaCanvas = document.createElement('canvas');
   santaCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;';
@@ -864,12 +842,9 @@
   function drawReindeer(ctx, cx, cy, sc, phase) {
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.scale(-sc, sc); // espelhado: vai da esquerda para direita
-
+    ctx.scale(-sc, sc);
     const lp  = Math.sin(phase);
     const lp2 = Math.sin(phase + Math.PI);
-
-    // Galhada
     ctx.beginPath();
     ctx.moveTo(-5, -38); ctx.lineTo(-18, -62); ctx.lineTo(-26, -72);
     ctx.moveTo(-18, -62); ctx.lineTo(-10, -72);
@@ -878,54 +853,35 @@
     ctx.moveTo(16, -60); ctx.lineTo(8, -70);
     ctx.moveTo(20, -65); ctx.lineTo(28, -74);
     ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
-
-    // Cabeça + pescoço
     ctx.beginPath();
     ctx.moveTo(-4, -10);
     ctx.bezierCurveTo(-2, -28, 4, -32, 6, -38);
     ctx.bezierCurveTo(14, -42, 20, -38, 18, -30);
     ctx.bezierCurveTo(16, -22, 10, -20, 8, -16);
     ctx.closePath(); ctx.fill();
-
-    // Corpo
     ctx.beginPath(); ctx.ellipse(0, 0, 30, 14, -0.18, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(-4, 6, 22, 10, -0.1, 0, Math.PI * 2); ctx.fill();
-
-    // Cauda
     ctx.beginPath(); ctx.ellipse(-28, -4, 7, 5, 0.5, 0, Math.PI * 2); ctx.fill();
-
-    // Focinho
     ctx.beginPath(); ctx.ellipse(22, -28, 8, 5, 0.3, 0, Math.PI * 2); ctx.fill();
-
-    // Patas dianteiras
     ctx.lineWidth = 4.5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(18, 8); ctx.lineTo(28 + lp * 12, 28); ctx.lineTo(30 + lp * 14, 44); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(12, 10); ctx.lineTo(20 + lp * 8, 30); ctx.lineTo(22 + lp * 10, 44); ctx.stroke();
-
-    // Patas traseiras
     ctx.beginPath(); ctx.moveTo(-18, 8); ctx.lineTo(-28 + lp2 * 10, 28); ctx.lineTo(-30 + lp2 * 12, 44); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-12, 10); ctx.lineTo(-20 + lp2 * 8, 30); ctx.lineTo(-22 + lp2 * 10, 44); ctx.stroke();
-
     ctx.restore();
   }
 
   function drawSleigh(ctx, cx, cy, sc) {
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.scale(-sc, sc); // espelhado
-
-    // Patins
+    ctx.scale(-sc, sc);
     ctx.lineWidth = 5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(-60, 30); ctx.bezierCurveTo(-40, 48, 20, 48, 60, 32); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-50, 24); ctx.bezierCurveTo(-30, 42, 14, 42, 52, 26); ctx.stroke();
-
-    // Corpo do trenó
     ctx.beginPath();
     ctx.moveTo(-55, 22); ctx.lineTo(-58, -5);
     ctx.bezierCurveTo(-56, -28, -34, -34, -10, -28);
     ctx.lineTo(48, -12); ctx.lineTo(52, 22); ctx.closePath(); ctx.fill();
-
-    // Encosto alto
     ctx.beginPath();
     ctx.moveTo(-55, 20);
     ctx.bezierCurveTo(-70, -10, -65, -50, -30, -60);
@@ -933,30 +889,17 @@
     ctx.lineTo(-10, -28);
     ctx.bezierCurveTo(-34, -34, -56, -28, -58, -5);
     ctx.closePath(); ctx.fill();
-
-    // Saco de presentes
     ctx.beginPath(); ctx.ellipse(-22, -50, 20, 26, 0.2, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(-22, -24, 5, 0, Math.PI * 2); ctx.fill();
-
-    // Corpo Papai Noel
     ctx.beginPath(); ctx.ellipse(10, -18, 20, 26, 0.05, 0, Math.PI * 2); ctx.fill();
-
-    // Cabeça
     ctx.beginPath(); ctx.arc(14, -46, 16, 0, Math.PI * 2); ctx.fill();
-
-    // Gorro
     ctx.beginPath();
     ctx.moveTo(2, -56); ctx.lineTo(26, -80);
     ctx.bezierCurveTo(32, -90, 24, -96, 18, -90);
     ctx.lineTo(0, -68); ctx.closePath(); ctx.fill();
-
-    // Pompom
     ctx.beginPath(); ctx.arc(16, -92, 6, 0, Math.PI * 2); ctx.fill();
-
-    // Braço com rédeas
     ctx.lineWidth = 6;
     ctx.beginPath(); ctx.moveTo(24, -28); ctx.bezierCurveTo(40, -24, 52, -16, 56, -8); ctx.stroke();
-
     ctx.restore();
   }
 
@@ -993,62 +936,39 @@
     const H     = santaCanvas.height;
     const baseY = getSantaY();
     const sc    = Math.max(0.25, Math.min(0.55, W / 1400)) * 0.5;
-
-    // Largura total da cena: trenó + renas
     const reindeerCount   = 4;
     const reindeerSpacing = 110 * sc;
     const firstReindeerX  = 160 * sc;
     const sceneWidth = Math.abs(firstReindeerX) + reindeerCount * reindeerSpacing + 200 * sc;
-
-    // Começa completamente fora à ESQUERDA
     let posX = -sceneWidth;
-
-    // Termina completamente fora à DIREITA
-    // posX do trenó quando a última rena sai pela direita:
     const endPosX = W + 200 * sc;
-    const totalDist = endPosX - posX;
-
-    const speed = W * 0.09; // px/s — velocidade suave
-    const duration = (totalDist / speed) * 1000; // ms exactos para atravessar tudo
-
+    const speed = W * 0.09;
     let legPhase  = 0;
     let startTime = null;
     let alpha     = 0;
-
     if (santaAnimId) cancelAnimationFrame(santaAnimId);
-
     function animate(now) {
       if (!startTime) startTime = now;
       const elapsed = now - startTime;
-
-      // Para APENAS depois que sair completamente pela direita
       if (posX > endPosX + 50) {
         santaCtx.clearRect(0, 0, W, H);
         santaAnimId = null;
         return;
       }
-
       const dt = 1 / 60;
       legPhase += dt * 7;
       posX += speed * dt;
-
-      // Fade in quando entra, fade out quando sai — baseado na posição, não no tempo
       const enterFrac = Math.min(1, (posX + sceneWidth) / (sceneWidth * 0.3));
       const exitFrac  = Math.min(1, (endPosX - posX)   / (sceneWidth * 0.3));
       alpha = Math.min(enterFrac, exitFrac);
-
       santaCtx.clearRect(0, 0, W, H);
       santaCtx.fillStyle   = `rgba(8,12,35,${alpha * 0.75})`;
       santaCtx.strokeStyle = `rgba(8,12,35,${alpha * 0.75})`;
-
-      // Rédeas e renas (à frente/direita do trenó)
       santaCtx.lineWidth = Math.max(0.5, 2 * sc);
       santaCtx.lineCap   = 'round';
-
       for (let i = 0; i < reindeerCount; i++) {
         const rx = posX + firstReindeerX + i * reindeerSpacing;
         const ry = baseY + Math.sin(i * 0.7 + legPhase * 0.25) * 3 * sc;
-
         const ropeEndX = posX + 60 * sc;
         const midX     = (ropeEndX + rx - 32 * sc) / 2;
         const sag      = (3 + i * 1.5) * sc;
@@ -1056,18 +976,12 @@
         santaCtx.moveTo(ropeEndX, baseY - 4 * sc);
         santaCtx.quadraticCurveTo(midX, baseY - 4 * sc + sag, rx - 32 * sc, ry - 8 * sc);
         santaCtx.stroke();
-
         drawReindeer(santaCtx, rx, ry, sc * 0.85, legPhase + i * 1.4);
       }
-
       drawSleigh(santaCtx, posX, baseY, sc);
-
-      // Estrelinhas atrás do trenó (à esquerda, trilha)
       drawStars(santaCtx, posX - 350 * sc, baseY - 20 * sc, sc, elapsed / 1000, alpha);
-
       santaAnimId = requestAnimationFrame(animate);
     }
-
     santaAnimId = requestAnimationFrame(animate);
   }
 
