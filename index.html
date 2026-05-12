@@ -6,6 +6,7 @@
   <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet" />
   <style>
     :root { --radius: 18px; --shadow: 0 0 20px #0008; }
+
     body {
       margin: 0;
       background: url(teste2.png) no-repeat center center fixed;
@@ -14,6 +15,8 @@
       font-family: "Segoe UI", sans-serif;
       overflow: hidden;
     }
+
+    /* ── Temas de cor por background ── */
     body.cloudy-theme #clock,
     body.cloudy-theme #date,
     body.cloudy-theme #weather-description,
@@ -28,7 +31,17 @@
     body.cloudy-theme .day-row-max {
       color: #0a1a3a !important;
     }
+    body.cloudy-theme .day-row-bar-wrap {
+      background: rgba(10,26,58,0.15) !important;
+    }
+    body.cloudy-theme .divider {
+      background: rgba(10,26,58,0.2) !important;
+    }
+    body.cloudy-theme .top-info-bar {
+      background: rgba(10,26,58,0.12) !important;
+    }
 
+    /* ── Canvas de chuva ── */
     #top-rain-canvas {
       position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
@@ -36,6 +49,7 @@
       border-radius: var(--radius);
     }
 
+    /* ── Layout principal ── */
     .layout {
       padding: 25px;
       height: 100vh;
@@ -48,7 +62,7 @@
 
     .top {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       width: 100%;
       background: transparent;
       border-radius: var(--radius);
@@ -57,53 +71,110 @@
       overflow: hidden;
       transition: background 0.8s ease;
     }
-    .top.rain-overlay { background: rgba(0, 0, 0, 0.30); }
+    .top.rain-overlay { background: rgba(0,0,0,0.30); }
 
+    /* ══════════════════════════════════════════
+       BARRA SUPERIOR: clima + câmbio
+    ══════════════════════════════════════════ */
+    .top-info-bar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 30px 10px 30px;
+      box-sizing: border-box;
+      background: rgba(0,0,0,0.10);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .info-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #weather-icon    { font-size: 76px; line-height: 1; }
+    #weather-now     { font-size: 76px; font-weight: 700; line-height: 1; }
+    #weather-now-day { font-size: 44px; font-weight: 600; opacity: 0.85; }
+    #weather-description { font-size: 44px; font-weight: 600; }
+
+    .info-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    #currency-section { font-size: 44px; display: flex; gap: 36px; }
+
+    /* ══════════════════════════════════════════
+       RELÓGIO — ocupa toda a largura
+    ══════════════════════════════════════════ */
     .col-clock {
       position: relative;
       z-index: 1;
-      flex: 0 0 55%;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 20px 10px 20px 30px;
+      padding: 0 30px;
       box-sizing: border-box;
+      flex: 1;
+      min-height: 0;
     }
-    #clock { font-size: clamp(68px, 15vw, 285px); font-weight: 700; line-height: 1; white-space: nowrap; }
-    #date  { font-size: 30px; font-weight: 700; margin-top: 8px; text-transform: uppercase; text-align: center; }
+    #clock {
+      font-size: clamp(90px, 18vw, 340px);
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      letter-spacing: -2px;
+    }
+    #date {
+      font-size: 56px;
+      font-weight: 700;
+      margin-top: 4px;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0.9;
+    }
 
-    .col-right {
+    .chart-section {
       position: relative;
       z-index: 1;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
+      padding: 10px 20% 20px 20%;
       box-sizing: border-box;
-      gap: 12px;
+      flex-shrink: 0;
     }
 
-    .weather-block { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
-    #weather-description { font-size: 26px; font-weight: 600; text-align: center; }
-    .weather-temp-block { display: flex; align-items: center; gap: 6px; }
-    #weather-icon { font-size: 52px; }
-    #weather-now  { font-size: 52px; font-weight: 700; }
-    #weather-now-day { font-size: 36px; font-weight: 700; white-space: nowrap; text-align: center; }
-    #currency-section { font-size: 22px; display: flex; gap: 14px; justify-content: center; }
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 1px;
+      margin-bottom: 14px;
+    }
 
-    .divider { width: 100%; height: 1px; background: rgba(255,255,255,0.2); border-radius: 1px; }
-
-    #day-chart-wrap { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+    #day-chart-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
     .day-row { display: flex; flex-direction: row; align-items: center; gap: 8px; }
-    .day-row-name { font-size: 22px; font-weight: 700; color: #fff; width: 54px; flex-shrink: 0; }
-    .day-row-icon { font-size: 28px; flex-shrink: 0; width: 34px; text-align: center; }
-    .day-row-min  { font-size: 20px; color: rgba(255,255,255,0.65); width: 42px; text-align: right; flex-shrink: 0; }
-    .day-row-bar-wrap { flex: 1; height: 13px; background: rgba(255,255,255,0.15); border-radius: 7px; position: relative; overflow: hidden; min-width: 40px; }
+    .day-row-name { font-size: 20px; font-weight: 700; color: #fff; width: 54px; flex-shrink: 0; }
+    .day-row-icon { font-size: 26px; flex-shrink: 0; width: 32px; text-align: center; }
+    .day-row-min  { font-size: 18px; color: rgba(255,255,255,0.65); width: 40px; text-align: right; flex-shrink: 0; }
+    .day-row-bar-wrap { flex: 1; height: 12px; background: rgba(255,255,255,0.15); border-radius: 7px; position: relative; overflow: hidden; min-width: 40px; }
     .day-row-bar  { position: absolute; height: 100%; border-radius: 7px; }
-    .day-row-max  { font-size: 22px; font-weight: 700; color: #fff; width: 42px; text-align: left; flex-shrink: 0; }
+    .day-row-max  { font-size: 20px; font-weight: 700; color: #fff; width: 42px; text-align: left; flex-shrink: 0; }
+
+    /* Cores dos ícones do gráfico de previsão */
+    .day-row-icon.icon-rain       { color: #7ecbff !important; }
+    .day-row-icon.icon-clear      { color: #FFD700 !important; }
+    .day-row-icon.icon-cloud      { color: rgba(255,255,255,0.75) !important; }
+    .day-row-icon.icon-snow       { color: #cce8ff !important; }
+    .day-row-icon.icon-fog        { color: rgba(255,255,255,0.55) !important; }
   </style>
 </head>
 <body>
@@ -112,27 +183,34 @@
   <div class="top">
     <canvas id="top-rain-canvas"></canvas>
 
-    <div class="col-clock">
-      <div id="clock">--:--:--</div>
-      <div id="date">...</div>
-    </div>
-
-    <div class="col-right">
-      <div class="weather-block">
-        <div id="weather-description">--</div>
-        <div class="weather-temp-block">
-          <span id="weather-icon" class="mdi"></span>
-          <span id="weather-now">--°C</span>
-        </div>
+    <!-- ① Barra de clima + câmbio acima da hora -->
+    <div class="top-info-bar">
+      <div class="info-bar-left">
+        <span id="weather-icon" class="mdi"></span>
+        <span id="weather-now">--°C</span>
         <span id="weather-now-day">--</span>
+        <span id="weather-description">--</span>
+      </div>
+      <div class="info-bar-right">
         <div id="currency-section">
           <div id="usd">USD: --</div>
           <div id="eur">EUR: --</div>
         </div>
       </div>
+    </div>
+
+    <!-- ② Relógio ocupa toda a largura -->
+    <div class="col-clock">
+      <div id="clock">--:--:--</div>
+      <div id="date">...</div>
+    </div>
+
+    <!-- ③ Gráfico de barras abaixo da hora -->
+    <div class="chart-section">
       <div class="divider"></div>
       <div id="day-chart-wrap"></div>
     </div>
+
   </div>
 </div>
 
@@ -145,6 +223,45 @@
   const DIAS_SEMANA_FULL = ['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado'];
   const DIAS_ABREV       = ['Dom.','Seg.','Ter.','Qua.','Qui.','Sex.','Sáb.'];
   const MESES            = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+  // ══════════════════════════════════════════
+  //  FUNDO DINÂMICO — dia/noite + limpo/nublado
+  // ══════════════════════════════════════════
+  const CLOUDY_KEYWORDS = [
+    'nublado','nuvens','nevoeiro','encoberto','overcast','chuva','garoa','trovoada',
+    'cloudy','clouds','fog','mist','haze','nebuloso','rain','drizzle','thunderstorm',
+    'parcialmente nublado','partly cloudy','mostly cloudy','levemente nublado','algumas nuvens','few clouds'
+  ];
+
+  function isCloudyCondition(desc) {
+    const l = (desc || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return CLOUDY_KEYWORDS.some(k => l.includes(k.normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+  }
+
+  function isNighttime() {
+    const h = new Date().getHours();
+    return h >= 19 || h < 6;
+  }
+
+  function updateBackground(desc) {
+    const cloudy = isCloudyCondition(desc);
+    const night  = isNighttime();
+
+    let img;
+    if (night) {
+      img = cloudy ? 'noitenublada.jpg' : 'noitelimpa.jpg';
+    } else {
+      img = cloudy ? 'nublado.jpg' : 'teste2.png';
+    }
+
+    document.body.style.backgroundImage = `url('${img}')`;
+
+    if (cloudy && !night) {
+      document.body.classList.add('cloudy-theme');
+    } else {
+      document.body.classList.remove('cloudy-theme');
+    }
+  }
 
   // ══════════════════════════════════════════
   //  MOTOR DE CHUVA
@@ -180,11 +297,9 @@
   function resizeRain() {
     rainCanvases.forEach(c => {
       if (!c.el) return;
-
       const parent = c.el.parentElement;
       const w = Math.max(1, Math.floor(parent ? parent.offsetWidth  : window.innerWidth));
       const h = Math.max(1, Math.floor(parent ? parent.offsetHeight : window.innerHeight));
-
       c.el.width  = Math.floor(w * DPR);
       c.el.height = Math.floor(h * DPR);
       c.el.style.width  = w + 'px';
@@ -192,7 +307,6 @@
       c.w = c.el.width;
       c.h = c.el.height;
       c.ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-
       if (eng.active) {
         seedDrops(c.id, Math.floor(Math.min(MAX_DROPS, 120 * RAIN_DENSITY * (w / 800))));
       }
@@ -239,7 +353,6 @@
     rainCanvases.forEach(c => {
       if (!c.el) return;
       const cw = c.w / DPR, ch = c.h / DPR;
-
       const drops = eng.drops[c.id];
       for (let i = 0; i < drops.length; i++) {
         const d = drops[i];
@@ -251,7 +364,6 @@
           drops[i] = mkDrop(c.id, false);
         }
       }
-
       const splashes = eng.splashes[c.id];
       for (let i = splashes.length - 1; i >= 0; i--) {
         const s = splashes[i];
@@ -260,7 +372,6 @@
         s.life -= dt * 2.5;
         if (s.life <= 0) splashes.splice(i, 1);
       }
-
     });
   }
 
@@ -278,12 +389,10 @@
       ctx.beginPath(); ctx.lineWidth = d.width; ctx.strokeStyle = grad;
       ctx.moveTo(tx, ty); ctx.lineTo(d.x, d.y); ctx.stroke();
     });
-
     eng.splashes[c.id].forEach(s => {
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(200,230,255,${s.alpha * s.life})`; ctx.fill();
     });
-
     ctx.restore();
   }
 
@@ -292,7 +401,6 @@
       if (!c.ctx) return;
       c.ctx.clearRect(0, 0, c.w, c.h);
       if (eng.active) {
-        // Clipa o desenho dentro dos limites do canvas
         c.ctx.save();
         c.ctx.beginPath();
         c.ctx.rect(0, 0, c.w / DPR, c.h / DPR);
@@ -317,11 +425,9 @@
     requestAnimationFrame(step);
   }
 
-  // Detecção apenas para chuva, garoa e trovoada
   function isRainCondition(condition, weatherId) {
     const c = (condition || '').toLowerCase();
     const id = weatherId || 0;
-    // OpenWeatherMap IDs: 2xx = thunderstorm, 3xx = drizzle, 5xx = rain
     if (id >= 200 && id < 600) return true;
     return c.includes('rain') || c.includes('drizzle') || c.includes('thunderstorm');
   }
@@ -329,13 +435,10 @@
   function setRainEffect(condition, weatherId) {
     const isRain = isRainCondition(condition, weatherId);
     eng.active = isRain;
-
     const topEl = document.querySelector('.top');
     if (topEl) topEl.classList.toggle('rain-overlay', isRain);
-
     rainCanvases.forEach(c => {
       if (!c.el) return;
-
       if (isRain) {
         const w = c.w / DPR;
         const count = Math.floor(Math.min(MAX_DROPS, 160 * RAIN_DENSITY * (w / 800)));
@@ -345,13 +448,15 @@
         eng.splashes[c.id] = [];
       }
     });
-
-    console.log(`[Rain] active=${isRain}, condition="${condition}", id=${weatherId}`);
   }
 
   // ══════════════════════════════════════════
-  //  RELÓGIO
+  //  RELÓGIO — atualiza a cada segundo
+  //  e reavalia o fundo na virada de hora
   // ══════════════════════════════════════════
+  let lastHour = new Date().getHours();
+  let currentWeatherDesc = '';
+
   function updateClock() {
     const now = new Date();
     document.getElementById('clock').textContent =
@@ -362,6 +467,13 @@
       DIAS_SEMANA_FULL[now.getDay()] + ', ' +
       String(now.getDate()).padStart(2,'0') + ' ' +
       MESES[now.getMonth()];
+
+    // Reavalia background quando a hora muda (ex: passa das 19h ou das 6h)
+    const h = now.getHours();
+    if (h !== lastHour) {
+      lastHour = h;
+      if (currentWeatherDesc) updateBackground(currentWeatherDesc);
+    }
   }
   updateClock();
   setInterval(updateClock, 1000);
@@ -379,26 +491,13 @@
     return map[code] || 'mdi-weather-cloudy';
   }
 
-  // ══════════════════════════════════════════
-  //  FUNDO DINÂMICO
-  // ══════════════════════════════════════════
-  const CLOUDY_KEYWORDS = [
-    'nublado','nuvens','nevoeiro','encoberto','overcast','chuva','garoa','trovoada',
-    'cloudy','clouds','fog','mist','haze','nebuloso','rain','drizzle','thunderstorm',
-    'parcialmente nublado','partly cloudy','mostly cloudy','levemente nublado','algumas nuvens','few clouds'
-  ];
-  function isCloudyCondition(desc) {
-    const l = desc.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    return CLOUDY_KEYWORDS.some(k => l.includes(k.normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
-  }
-  function updateBackground(desc) {
-    if (isCloudyCondition(desc)) {
-      document.body.style.backgroundImage = "url('nublado.jpg')";
-      document.body.classList.add('cloudy-theme');
-    } else {
-      document.body.style.backgroundImage = "url('teste2.png')";
-      document.body.classList.remove('cloudy-theme');
-    }
+  // Classe de cor para ícone do gráfico
+  function iconColorClass(code) {
+    if (['Rain','Drizzle','Thunderstorm'].includes(code)) return 'icon-rain';
+    if (code === 'Clear') return 'icon-clear';
+    if (code === 'Snow')  return 'icon-snow';
+    if (['Mist','Fog','Haze'].includes(code)) return 'icon-fog';
+    return 'icon-cloud';
   }
 
   // ══════════════════════════════════════════
@@ -440,7 +539,8 @@
         const h = new Date(cur.dt * 1000).getHours();
         return Math.abs(h - 12) < Math.abs(new Date(best.dt * 1000).getHours() - 12) ? cur : best;
       });
-      const ic   = weatherIcon(noon.weather[0].main);
+      const ic        = weatherIcon(noon.weather[0].main);
+      const icColor   = iconColorClass(noon.weather[0].main);
       let barColor = '#74b9ff';
       if (dMax >= 20 && dMax < 25) barColor = '#FFD700';
       if (dMax >= 25) barColor = '#FF8C00';
@@ -454,7 +554,7 @@
       row.className = 'day-row';
       row.innerHTML = `
         <div class="day-row-name">${dayName}</div>
-        <span class="day-row-icon mdi ${ic}"></span>
+        <span class="day-row-icon mdi ${ic} ${icColor}"></span>
         <div class="day-row-min">${dMin}°</div>
         <div class="day-row-bar-wrap">
           <div class="day-row-bar" style="left:${leftPct}%;width:${widthPct}%;background:linear-gradient(to right,${barColor}99,${barColor})"></div>
@@ -481,9 +581,12 @@
 
       const temp        = Math.round(nowData.main.temp);
       const condition   = nowData.weather[0].main;
-      const weatherId   = nowData.weather[0].id; // FIX: pega o ID numérico
+      const weatherId   = nowData.weather[0].id;
       const description = nowData.weather[0].description || '';
       const prettyDesc  = description.charAt(0).toUpperCase() + description.slice(1);
+
+      // Guarda para reavaliação na virada de hora
+      currentWeatherDesc = prettyDesc;
 
       document.getElementById('weather-now').textContent  = `${temp}°C`;
       document.getElementById('weather-description').textContent = prettyDesc;
@@ -495,7 +598,7 @@
       document.getElementById('weather-now-day').textContent = `${dia}-${mes}`;
 
       updateBackground(prettyDesc);
-      setRainEffect(condition, weatherId); // FIX: passa o ID numérico também
+      setRainEffect(condition, weatherId);
 
       const todayStr = new Date().toISOString().slice(0,10);
       const dailyMap = {};
@@ -521,7 +624,6 @@
   }
 
   // ── Init ──
-  // FIX: inicia tudo após o layout estar pronto
   window.addEventListener('load', () => {
     initRainCanvases();
     startEngine();
