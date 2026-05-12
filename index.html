@@ -463,6 +463,13 @@
       MESES[now.getMonth()];
     const h = now.getHours();
     if (h !== lastHour) { lastHour = h; if (currentWeatherDesc) updateBackground(currentWeatherDesc); }
+
+    // Cor da hora: azul escuro se céu limpo entre 6h e 18h, branco nos demais casos
+    const isDay   = h >= 6 && h < 19;
+    const isClear = currentWeatherDesc !== '' && !isCloudyCondition(currentWeatherDesc);
+    const clockColor = (isDay && isClear) ? '#003366' : '#ffffff';
+    document.getElementById('clock').style.color = clockColor;
+    document.getElementById('date').style.color  = clockColor;
   }
   updateClock();
   setInterval(updateClock, 1000);
@@ -772,6 +779,9 @@
       document.getElementById('weather-now').textContent        = `${temp}°C`;
       document.getElementById('weather-description').textContent = prettyDesc;
       document.getElementById('weather-icon').className          = 'mdi ' + weatherIcon(condition);
+
+      // Reavalia cor da hora agora que temos o clima atualizado
+      updateClock();
 
       // Temperatura no gráfico: azul se nublado/chuva, branco se limpo
       const tempEl = document.getElementById('chart-weather-temp');
