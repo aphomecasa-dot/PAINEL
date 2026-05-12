@@ -121,7 +121,7 @@
       align-items: center;
       padding: 0 30px;
       box-sizing: border-box;
-      flex: 0.9;
+      flex: 0.72;
       min-height: 0;
     }
     #clock {
@@ -140,45 +140,52 @@
       opacity: 0.9;
     }
 
-    /* ── Gráfico de barras com fundo 70% transparente ── */
+    /* ── Container pai ── */
     .chart-section {
       position: relative;
       z-index: 1;
       box-sizing: border-box;
       flex-shrink: 0;
-      background: rgba(0, 0, 0, 0.50);   // ajuste transparencia < ---------------------------
-      border-radius: var(--radius);
       display: flex;
       flex-direction: row;
-      align-items: stretch;
-      padding: 10px 0 16px 0;
-      gap: 0;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      background: transparent;
+      min-height: 180px;
     }
 
-    /* Coluna esquerda: só temperatura grande */
+    /* Bloco esquerdo: temperatura — posição absoluta para não deslocar o gráfico */
     .chart-side-left {
-      flex: 0 0 12%;
+      position: absolute;
+      left: 2%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 0 10px;
-      border-right: 1px solid rgba(255,255,255,0.12);
+      padding: 14px 18px 20px 18px;
+      background: rgba(0, 0, 0, 0.30);
+      border-radius: var(--radius);
     }
     .chart-side-left .cs-temp {
-      font-size: 128px; /* dobrado novamente de 64px */
+      font-size: 154px;
       font-weight: 700;
       line-height: 1;
       color: #ffffff;
     }
 
-    /* Coluna central: gráfico — 20% de padding extra à esquerda */
+    /* Bloco central: gráfico de barras — quadrante próprio */
     .chart-center {
-      flex: 1;
+      flex: 0 1 auto;
       display: flex;
       flex-direction: column;
-      padding: 0 20% 0 10%;
+      padding: 14px 24px 20px 24px;
       justify-content: center;
+      background: rgba(0, 0, 0, 0.30);
+      border-radius: var(--radius);
+      min-width: 0;
+      width: fit-content;
+      align-self: center;
     }
 
     .divider {
@@ -192,16 +199,18 @@
     #day-chart-wrap {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      width: 100%;
+      gap: 12px;
+      width: 55vw; /* largura fixa proporcional à tela */
     }
     .day-row { display: flex; flex-direction: row; align-items: center; gap: 8px; }
-    .day-row-name { font-size: 20px; font-weight: 700; color: #fff; width: 54px; flex-shrink: 0; }
-    .day-row-icon { font-size: 26px; flex-shrink: 0; width: 32px; text-align: center; }
-    .day-row-min  { font-size: 18px; color: rgba(255,255,255,0.65); width: 40px; text-align: right; flex-shrink: 0; }
-    .day-row-bar-wrap { flex: 1; height: 12px; background: rgba(255,255,255,0.15); border-radius: 7px; position: relative; overflow: hidden; min-width: 40px; }
+    .day-row-name { font-size: 24px; font-weight: 700; color: #fff; width: 60px; flex-shrink: 0; }
+    .day-row-icon { font-size: 31px; flex-shrink: 0; width: 36px; text-align: center; }
+    /* min e max sem color fixo — recebem cor via JS inline style */
+    .day-row-min  { font-size: 22px; width: 46px; text-align: right; flex-shrink: 0; }
+    .day-row-bar-wrap { flex: 1; height: 14px; background: rgba(255,255,255,0.15); border-radius: 7px; position: relative; overflow: hidden; min-width: 40px; }
     .day-row-bar  { position: absolute; height: 100%; border-radius: 7px; }
-    .day-row-max  { font-size: 20px; font-weight: 700; color: #fff; width: 42px; text-align: left; flex-shrink: 0; }
+    /* max sem color fixo — recebe cor via JS inline style */
+    .day-row-max  { font-size: 24px; font-weight: 700; width: 50px; text-align: left; flex-shrink: 0; }
 
     .day-row-icon.icon-rain  { color: #7ecbff !important; }
     .day-row-icon.icon-clear { color: #FFD700 !important; }
@@ -223,7 +232,7 @@
         <span id="weather-icon" class="mdi"></span>
         <span id="weather-now">--°C</span>
       </div>
-      <div style="flex:1;display:flex;justify-content:center;align-items:center;">
+      <div style="flex:1;display:flex;justify-content:center;align-items:center;padding-left:10%;">
         <span id="weather-description">--</span>
       </div>
       <div class="info-bar-right">
@@ -528,6 +537,27 @@
     const globalMax = Math.max(...allMaxs);
     const range = globalMax - globalMin || 1;
 
+    // Interpola cor azul→vermelho baseado na temperatura relativa
+    function tempColor(t) {
+      const pct = Math.max(0, Math.min(1, (t - globalMin) / range));
+      const stops = [
+        [0,    [116, 185, 255]],  // azul claro
+        [0.35, [0,   210, 200]],  // ciano
+        [0.55, [85,  220, 85 ]],  // verde
+        [0.75, [255, 200, 0  ]],  // amarelo
+        [1.0,  [255, 80,  0  ]],  // vermelho
+      ];
+      let lo = stops[0], hi = stops[stops.length - 1];
+      for (let s = 0; s < stops.length - 1; s++) {
+        if (pct >= stops[s][0] && pct <= stops[s+1][0]) { lo = stops[s]; hi = stops[s+1]; break; }
+      }
+      const f = (pct - lo[0]) / ((hi[0] - lo[0]) || 1);
+      const r = Math.round(lo[1][0] + (hi[1][0] - lo[1][0]) * f);
+      const g = Math.round(lo[1][1] + (hi[1][1] - lo[1][1]) * f);
+      const b = Math.round(lo[1][2] + (hi[1][2] - lo[1][2]) * f);
+      return `rgb(${r},${g},${b})`;
+    }
+
     dailyKeys.forEach(d => {
       const items = dailyMap[d];
       const dMin  = Math.round(Math.min(...items.map(i => i.main.temp_min)));
@@ -538,9 +568,9 @@
       });
       const ic      = weatherIcon(noon.weather[0].main);
       const icColor = iconColorClass(noon.weather[0].main);
-      let barColor = '#74b9ff';
-      if (dMax >= 20 && dMax < 25) barColor = '#FFD700';
-      if (dMax >= 25) barColor = '#FF8C00';
+
+      const minColor = tempColor(dMin);
+      const maxColor = tempColor(dMax);
 
       const leftPct  = ((dMin - globalMin) / range * 80).toFixed(1);
       const widthPct = ((dMax - dMin)      / range * 80).toFixed(1);
@@ -552,11 +582,11 @@
       row.innerHTML = `
         <div class="day-row-name">${dayName}</div>
         <span class="day-row-icon mdi ${ic} ${icColor}"></span>
-        <div class="day-row-min">${dMin}°</div>
+        <div class="day-row-min" style="color:${minColor}">${dMin}°</div>
         <div class="day-row-bar-wrap">
-          <div class="day-row-bar" style="left:${leftPct}%;width:${widthPct}%;background:linear-gradient(to right,${barColor}99,${barColor})"></div>
+          <div class="day-row-bar" style="left:${leftPct}%;width:${widthPct}%;background:linear-gradient(to right,${minColor},${maxColor})"></div>
         </div>
-        <div class="day-row-max">${dMax}°</div>
+        <div class="day-row-max" style="color:${maxColor}">${dMax}°</div>
       `;
       wrap.appendChild(row);
     });
