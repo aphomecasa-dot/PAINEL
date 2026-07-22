@@ -216,6 +216,13 @@
     .day-row-icon.icon-cloud { color: rgba(255,255,255,0.75) !important; }
     .day-row-icon.icon-snow  { color: #cce8ff !important; }
     .day-row-icon.icon-fog   { color: rgba(255,255,255,0.55) !important; }
+
+    /* Telas de tablet (ex.: iPad): afasta o gráfico de barras da temperatura à esquerda */
+    @media (min-width: 600px) and (max-width: 1300px) {
+      .chart-center {
+        transform: translate(40%, 15%);
+      }
+    }
   </style>
 </head>
 <body>
