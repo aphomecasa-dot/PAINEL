@@ -9,7 +9,7 @@
 
     body {
       margin: 0;
-      background: url(teste2.png) no-repeat center center fixed;
+      background: url(fundo.jpg) no-repeat center center fixed;
       background-size: cover;
       color: #fff;
       font-family: "Segoe UI", sans-serif;
@@ -113,6 +113,16 @@
       flex: 0.72;
       min-height: 0;
     }
+
+    .clock-box {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 40px 22px 40px;
+      background: rgba(0, 0, 0, 0.60);
+      border-radius: var(--radius);
+      width: fit-content;
+    }
     #clock {
       font-size: clamp(90px, 18vw, 340px);
       font-weight: 700;
@@ -138,7 +148,7 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       padding: 0;
       background: transparent;
       min-height: 180px;
@@ -157,7 +167,7 @@
       border-radius: var(--radius);
     }
     .chart-side-left .cs-temp {
-      font-size: 154px;
+      font-size: 169.4px;
       font-weight: 700;
       line-height: 1;
       color: #ffffff;
@@ -175,7 +185,7 @@
       min-width: 0;
       width: fit-content;
       align-self: center;
-      margin-left: 10%;
+      margin-left: 0;
     }
 
     .divider {
@@ -233,8 +243,10 @@
     </div>
 
     <div class="col-clock">
-      <div id="clock">--:--:--</div>
-      <div id="date">...</div>
+      <div class="clock-box">
+        <div id="clock">--:--:--</div>
+        <div id="date">...</div>
+      </div>
     </div>
 
     <div class="chart-section">
@@ -260,7 +272,7 @@
   const MESES            = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 
   // ══════════════════════════════════════════
-  //  FUNDO DINÂMICO
+  //  HELPERS DE CONDIÇÃO
   // ══════════════════════════════════════════
   const CLOUDY_KEYWORDS = [
     'nublado','nuvens','nevoeiro','encoberto','overcast','chuva','garoa','trovoada',
@@ -278,16 +290,14 @@
     return h >= 19 || h < 6;
   }
 
+  // ══════════════════════════════════════════
+  //  FUNDO — único, independente do clima
+  // ══════════════════════════════════════════
   function updateBackground(desc) {
     const cloudy = isCloudyCondition(desc);
     const night  = isNighttime();
-    let img;
-    if (night) {
-      img = cloudy ? 'noitenublada.jpg' : 'noitelimpa.jpg';
-    } else {
-      img = cloudy ? 'nublado.jpg' : 'teste2.png';
-    }
-    document.body.style.backgroundImage = `url('${img}')`;
+    // Papel de parede fixo, não muda mais conforme clima/horário
+    document.body.style.backgroundImage = `url('fundo.jpg')`;
     if (cloudy && !night) {
       document.body.classList.add('cloudy-theme');
     } else {
@@ -470,9 +480,25 @@
     const clockColor = (isDay && isClear) ? '#003366' : '#ffffff';
     document.getElementById('clock').style.color = clockColor;
     document.getElementById('date').style.color  = clockColor;
+
+    alignChartWithClock();
   }
   updateClock();
   setInterval(updateClock, 1000);
+
+  // Alinha o limite esquerdo do gráfico de barras (.chart-center) com o limite
+  // esquerdo do quadrante escuro da hora atual (.clock-box)
+  function alignChartWithClock() {
+    const clockBox     = document.querySelector('.clock-box');
+    const chartCenter  = document.querySelector('.chart-center');
+    const chartSection = document.querySelector('.chart-section');
+    if (!clockBox || !chartCenter || !chartSection) return;
+    const clockRect   = clockBox.getBoundingClientRect();
+    const sectionRect = chartSection.getBoundingClientRect();
+    const offset = Math.max(0, clockRect.left - sectionRect.left);
+    chartCenter.style.marginLeft = offset + 'px';
+  }
+  window.addEventListener('resize', alignChartWithClock);
 
   // ══════════════════════════════════════════
   //  ÍCONES E CORES
@@ -582,7 +608,7 @@
   }
 
   // ══════════════════════════════════════════
-  //  NEVE REALISTA
+  //  NEVE REALISTA (sem acúmulo indefinido)
   // ══════════════════════════════════════════
   const snowCanvas = document.getElementById('snow-canvas');
   const snowCtx    = snowCanvas ? snowCanvas.getContext('2d') : null;
@@ -592,6 +618,7 @@
   let snowAnimId   = null;
   let snowWind     = 0;
   let snowWindTime = 0;
+  let snowResetTimer = null; // reseta o acúmulo periodicamente, como no dashboard 1
 
   function resizeSnowCanvas() {
     if (!snowCanvas) return;
@@ -677,6 +704,12 @@
     snowRunning = true; snowWindTime = 0;
     let last = performance.now();
 
+    // Reseta o acúmulo de neve a cada 20 minutos, para não acumular indefinidamente
+    if (snowResetTimer) clearInterval(snowResetTimer);
+    snowResetTimer = setInterval(() => {
+      if (snowPile) snowPile.fill(0);
+    }, 20 * 60 * 1000);
+
     function step(now) {
       if (!snowRunning) return;
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -743,6 +776,7 @@
   function stopSnow() {
     snowRunning = false;
     if (snowAnimId) cancelAnimationFrame(snowAnimId);
+    if (snowResetTimer) { clearInterval(snowResetTimer); snowResetTimer = null; }
     if (snowCanvas) snowCanvas.classList.remove('visible');
     snowFlakes = [];
     if (snowPile) snowPile.fill(0);
@@ -791,19 +825,29 @@
                        effC.includes('thunderstorm') || effC.includes('mist') || effC.includes('fog') || effC.includes('haze');
       tempEl.style.color = isCloudy ? '#74b9ff' : '#ffffff';
 
-      updateBackground(prettyDesc);         // teste: updateBackground('nublado');
+      updateBackground(prettyDesc);         // fundo fixo (fundo.jpg), só ajusta cloudy-theme
       setRainEffect(condition, weatherId);  // teste: setRainEffect('Rain', 500);
 
       applySnow(temp);
 
-      const todayStr = new Date().toISOString().slice(0,10);
+      const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
       const dailyMap = {};
       forecastData.list.forEach(item => {
-        const d = item.dt_txt.slice(0,10);
+        const d = new Date(item.dt * 1000).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
         if (!dailyMap[d]) dailyMap[d] = [];
         dailyMap[d].push(item);
       });
-      const dailyKeys = Object.keys(dailyMap).filter(d => d > todayStr).slice(0,5);
+      // Garante que hoje sempre apareça, mesmo se a API não tiver mais slots de 3h restantes no dia
+      if (!dailyMap[todayStr]) dailyMap[todayStr] = [];
+      dailyMap[todayStr].push({
+        dt: Math.floor(Date.now() / 1000),
+        main: {
+          temp_min: nowData.main.temp_min ?? nowData.main.temp,
+          temp_max: nowData.main.temp_max ?? nowData.main.temp
+        },
+        weather: nowData.weather
+      });
+      const dailyKeys = Object.keys(dailyMap).sort().filter(d => d >= todayStr).slice(0,5);
       buildChart(dailyKeys, dailyMap);
 
     } catch(e) {
@@ -832,6 +876,11 @@
 
   // ══════════════════════════════════════════
   //  PAPAI NOEL
+  //  - Renas de frente para a direção do movimento
+  //  - Altura na linha da cotação (#currency-section)
+  //  - Velocidade a 1/3 da original
+  //  - Tamanho +30%
+  //  - Aparece a cada 30 segundos (enquanto snowRunning = true)
   // ══════════════════════════════════════════
   const santaCanvas = document.createElement('canvas');
   santaCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;';
@@ -846,13 +895,18 @@
   window.addEventListener('resize', resizeSantaCanvas);
 
   function getSantaY() {
+    const el = document.getElementById('date');
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      return rect.bottom + 40;
+    }
     return santaCanvas.height * 0.78;
   }
 
   function drawReindeer(ctx, cx, cy, sc, phase) {
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.scale(-sc, sc);
+    ctx.scale(sc, sc);
     const lp  = Math.sin(phase);
     const lp2 = Math.sin(phase + Math.PI);
     ctx.beginPath();
@@ -945,14 +999,14 @@
     const W     = santaCanvas.width;
     const H     = santaCanvas.height;
     const baseY = getSantaY();
-    const sc    = Math.max(0.25, Math.min(0.55, W / 1400)) * 0.5;
+    const sc    = Math.max(0.25, Math.min(0.55, W / 1400)) * 0.5 * 1.3;
     const reindeerCount   = 4;
     const reindeerSpacing = 110 * sc;
     const firstReindeerX  = 160 * sc;
     const sceneWidth = Math.abs(firstReindeerX) + reindeerCount * reindeerSpacing + 200 * sc;
     let posX = -sceneWidth;
     const endPosX = W + 200 * sc;
-    const speed = W * 0.09;
+    const speed = (W * 0.09) / 3;
     let legPhase  = 0;
     let startTime = null;
     let alpha     = 0;
@@ -996,10 +1050,11 @@
   }
 
   function initSanta() {
-    const firstDelay = (8 + Math.random() * 4) * 60 * 1000;
+    // Aparição a cada 30 segundos (primeira e repetições)
+    const firstDelay = 30 * 1000;
     setTimeout(function scheduleNext() {
       if (snowRunning) runSantaScene();
-      const nextDelay = (9 + Math.random() * 4) * 60 * 1000;
+      const nextDelay = 30 * 1000;
       setTimeout(scheduleNext, nextDelay);
     }, firstDelay);
   }
