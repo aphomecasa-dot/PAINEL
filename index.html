@@ -187,7 +187,7 @@
       width: fit-content;
       align-self: center;
       margin-left: 0;
-      transform: translateY(2cm);
+      transform: translate(-1cm, 1.5cm);
     }
 
     .divider {
@@ -222,7 +222,7 @@
     /* Telas de tablet (ex.: iPad): afasta o gráfico de barras da temperatura à esquerda */
     @media (min-width: 600px) and (max-width: 1300px) {
       .chart-center {
-        transform: translate(40%, calc(15% + 2cm));
+        transform: translate(calc(40% - 1cm), calc(15% + 1.5cm));
       }
     }
   </style>
@@ -897,7 +897,7 @@
   //  - Aparece a cada 30 segundos (enquanto snowRunning = true)
   // ══════════════════════════════════════════
   const santaCanvas = document.createElement('canvas');
-  santaCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;';
+  santaCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:500;';
   document.body.appendChild(santaCanvas);
   const santaCtx = santaCanvas.getContext('2d');
   let santaAnimId = null;
@@ -1020,7 +1020,7 @@
     const sceneWidth = Math.abs(firstReindeerX) + reindeerCount * reindeerSpacing + 200 * sc;
     let posX = -sceneWidth;
     const endPosX = W + 200 * sc;
-    const speed = ((W * 0.09) / 3) * 1.4;
+    const speed = ((W * 0.09) / 3) * 1.4 * 1.4;
     let legPhase  = 0;
     let startTime = null;
     let alpha     = 0;
