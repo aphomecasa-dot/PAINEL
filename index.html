@@ -493,16 +493,16 @@
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Alinha o limite esquerdo do gráfico de barras (.chart-center) com o limite
-  // esquerdo do quadrante escuro da hora atual (.clock-box)
+  // Alinha o limite esquerdo do gráfico de barras (.chart-center) com o início
+  // do texto do dia da semana (#date)
   function alignChartWithClock() {
-    const clockBox     = document.querySelector('.clock-box');
+    const dateEl       = document.getElementById('date');
     const chartCenter  = document.querySelector('.chart-center');
     const chartSection = document.querySelector('.chart-section');
-    if (!clockBox || !chartCenter || !chartSection) return;
-    const clockRect   = clockBox.getBoundingClientRect();
+    if (!dateEl || !chartCenter || !chartSection) return;
+    const dateRect    = dateEl.getBoundingClientRect();
     const sectionRect = chartSection.getBoundingClientRect();
-    const offset = Math.max(0, clockRect.left - sectionRect.left);
+    const offset = Math.max(0, dateRect.left - sectionRect.left);
     chartCenter.style.marginLeft = offset + 'px';
   }
   window.addEventListener('resize', alignChartWithClock);
@@ -1006,7 +1006,7 @@
     const W     = santaCanvas.width;
     const H     = santaCanvas.height;
     const baseY = getSantaY();
-    const sc    = Math.max(0.25, Math.min(0.55, W / 1400)) * 0.5 * 1.3;
+    const sc    = Math.max(0.25, Math.min(0.55, W / 1400)) * 0.5 * 1.3 * 1.4;
     const reindeerCount   = 4;
     const reindeerSpacing = 110 * sc;
     const firstReindeerX  = 160 * sc;
