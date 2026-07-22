@@ -147,7 +147,7 @@
       flex-shrink: 0;
       display: flex;
       flex-direction: row;
-      align-items: center;
+      align-items: flex-start;
       justify-content: flex-start;
       padding: 0;
       background: transparent;
@@ -494,16 +494,21 @@
   setInterval(updateClock, 1000);
 
   // Alinha o limite esquerdo do gráfico de barras (.chart-center) com o início
-  // do texto do dia da semana (#date)
+  // do texto do dia da semana (#date), e o limite superior com o topo da
+  // temperatura do dia (.chart-side-left)
   function alignChartWithClock() {
     const dateEl       = document.getElementById('date');
+    const tempBox      = document.querySelector('.chart-side-left');
     const chartCenter  = document.querySelector('.chart-center');
     const chartSection = document.querySelector('.chart-section');
-    if (!dateEl || !chartCenter || !chartSection) return;
+    if (!dateEl || !tempBox || !chartCenter || !chartSection) return;
     const dateRect    = dateEl.getBoundingClientRect();
+    const tempRect    = tempBox.getBoundingClientRect();
     const sectionRect = chartSection.getBoundingClientRect();
-    const offset = Math.max(0, dateRect.left - sectionRect.left);
-    chartCenter.style.marginLeft = offset + 'px';
+    const offsetLeft = Math.max(0, dateRect.left - sectionRect.left);
+    const offsetTop  = Math.max(0, tempRect.top - sectionRect.top);
+    chartCenter.style.marginLeft = offsetLeft + 'px';
+    chartCenter.style.marginTop  = offsetTop + 'px';
   }
   window.addEventListener('resize', alignChartWithClock);
 
@@ -1013,7 +1018,7 @@
     const sceneWidth = Math.abs(firstReindeerX) + reindeerCount * reindeerSpacing + 200 * sc;
     let posX = -sceneWidth;
     const endPosX = W + 200 * sc;
-    const speed = (W * 0.09) / 3;
+    const speed = ((W * 0.09) / 3) * 1.4;
     let legPhase  = 0;
     let startTime = null;
     let alpha     = 0;
