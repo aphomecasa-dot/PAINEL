@@ -120,7 +120,10 @@
       background: rgba(0, 0, 0, 0.60);
       border-radius: var(--radius);
       width: fit-content;
-      transform: translateY(40px); /* desce o quadrante da hora — ajuste este valor se necessário */
+      position: absolute;
+      top: 62%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
     #clock {
       font-size: clamp(90px, 18vw, 340px);
@@ -504,9 +507,10 @@
     const dateRect    = dateEl.getBoundingClientRect();
     const tempRect    = tempBox.getBoundingClientRect();
     const sectionRect = chartSection.getBoundingClientRect();
-    // Topo do gráfico alinhado com o meio (verticalmente) do quadrante de temperatura
+    // Centro vertical do gráfico alinhado com o centro vertical do quadrante de temperatura
     const tempCenterY = (tempRect.top + tempRect.height / 2) - sectionRect.top;
-    const offsetTop   = Math.max(0, tempCenterY);
+    const chartHeight = chartCenter.offsetHeight;
+    const offsetTop   = Math.max(0, tempCenterY - chartHeight / 2);
 
     // Esquerda do gráfico 20% mais à esquerda do que o início do dia da semana
     const dateOffsetLeft = Math.max(0, dateRect.left - sectionRect.left);
