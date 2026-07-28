@@ -16,9 +16,7 @@
       overflow: hidden;
     }
 
-    /* cloudy-theme: só afeta topo, NÃO afeta gráfico de barras */
-    body.cloudy-theme #clock,
-    body.cloudy-theme #date,
+    /* cloudy-theme: só afeta topo, NÃO afeta gráfico de barras, NEM relógio/data */
     body.cloudy-theme #weather-description,
     body.cloudy-theme #weather-now,
     body.cloudy-theme #weather-icon,
@@ -129,6 +127,7 @@
       line-height: 1;
       white-space: nowrap;
       letter-spacing: -2px;
+      color: #ffffff;
     }
     #date {
       font-size: 56px;
@@ -137,6 +136,7 @@
       text-transform: uppercase;
       text-align: center;
       opacity: 0.9;
+      color: #ffffff;
     }
 
     /* ── Container pai ── */
@@ -483,12 +483,9 @@
     const h = now.getHours();
     if (h !== lastHour) { lastHour = h; if (currentWeatherDesc) updateBackground(currentWeatherDesc); }
 
-    // Cor da hora: azul escuro se céu limpo entre 6h e 18h, branco nos demais casos
-    const isDay   = h >= 6 && h < 19;
-    const isClear = currentWeatherDesc !== '' && !isCloudyCondition(currentWeatherDesc);
-    const clockColor = (isDay && isClear) ? '#003366' : '#ffffff';
-    document.getElementById('clock').style.color = clockColor;
-    document.getElementById('date').style.color  = clockColor;
+    // Hora e data sempre em branco, independentemente de clima ou horário
+    document.getElementById('clock').style.color = '#ffffff';
+    document.getElementById('date').style.color  = '#ffffff';
 
     alignChartWithClock();
   }
@@ -828,7 +825,7 @@
       document.getElementById('weather-description').textContent = prettyDesc;
       document.getElementById('weather-icon').className          = 'mdi ' + weatherIcon(condition);
 
-      // Reavalia cor da hora agora que temos o clima atualizado
+      // Reavalia relógio (hora e data seguem sempre brancas)
       updateClock();
 
       // Temperatura no gráfico: azul se nublado/chuva, branco se limpo
