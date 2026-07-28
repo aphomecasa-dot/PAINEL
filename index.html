@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet" />
+  <style>
+    :root { --radius: 18px; --shadow: 0 0 20px #0008; }
+
+    body {
+      margin: 0;
+      background: url(fundo.jpg) no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      font-family: "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+
+    /* cloudy-theme: só afeta topo, NÃO afeta gráfico de barras, NEM relógio/data */
+    body.cloudy-theme #weather-description,
+    body.cloudy-theme #weather-now,
+    body.cloudy-theme #weather-icon,
+    body.cloudy-theme #usd,
+    body.cloudy-theme #eur {
+      color: #0a1a3a !important;
+    }
+    body.cloudy-theme .top-info-bar {
+      background: rgba(10,26,58,0.12) !important;
+    }
+
+    #top-rain-canvas {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
+      border-radius: var(--radius);
+    }
+
+    #snow-canvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+    }
+    #snow-canvas.visible { opacity: 1; }
+
+    .layout {
+      padding: 25px;
+      height: 100vh;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .top {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      background: transparent;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.8s ease;
+    }
+    .top.rain-overlay { background: rgba(0,0,0,0.30); }
+
+    .top-info-bar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 30px 10px 30px;
+      box-sizing: border-box;
+      background: rgba(0,0,0,0.10);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .info-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #weather-icon    { font-size: 76px; line-height: 1; }
+    #weather-now     { font-size: 76px; font-weight: 700; line-height: 1; }
+    #weather-description { font-size: 44px; font-weight: 600; }
+
+    .info-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    #currency-section { font-size: 44px; display: flex; gap: 36px; }
+
+    .col-clock {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 30px;
+      box-sizing: border-box;
+      flex: 0.72;
+      min-height: 0;
+    }
+
+    .clock-box {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 40px 22px 40px;
+      background: rgba(0, 0, 0, 0.60);
+      border-radius: var(--radius);
+      width: fit-content;
+      position: absolute;
+      top: 62%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #clock {
+      font-size: clamp(90px, 18vw, 340px);
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      letter-spacing: -2px;
+      color: #ffffff;
+    }
+    #date {
+      font-size: 56px;
+      font-weight: 700;
+      margin-top: 4px;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0.9;
+      color: #ffffff;
+    }
+
+    /* ── Container pai ── */
+    .chart-section {
+      position: relative;
+      z-index: 1;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 0;
+      background: transparent;
+      min-height: 180px;
+    }
+
+    /* Bloco esquerdo: temperatura — posição absoluta */
+    .chart-side-left {
+      position: absolute;
+      left: 2%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 18px 20px 18px;
+      background: rgba(0, 0, 0, 0.60);
+      border-radius: var(--radius);
+      transform: translateY(2cm);
+    }
+    .chart-side-left .cs-temp {
+      font-size: 169.4px;
+      font-weight: 700;
+      line-height: 1;
+      color: #ffffff;
+    }
+
+    /* Bloco central: gráfico de barras */
+    .chart-center {
+      flex: 0 1 auto;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 31px 26px 24px;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.60);
+      border-radius: var(--radius);
+      min-width: 0;
+      width: fit-content;
+      align-self: center;
+      margin-left: 0;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 1px;
+      margin-bottom: 10px;
+    }
+
+    #day-chart-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 55vw;
+    }
+    .day-row { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+    /* Sempre branco — não afetado pelo cloudy-theme */
+    .day-row-name { font-size: 31px; font-weight: 700; color: #fff !important; width: 78px; flex-shrink: 0; }
+    .day-row-icon { font-size: 40px; flex-shrink: 0; width: 47px; text-align: center; }
+    .day-row-min  { font-size: 29px; font-weight: 700; width: 60px; text-align: right; flex-shrink: 0; }
+    .day-row-bar-wrap { flex: 1; height: 18px; background: rgba(255,255,255,0.15); border-radius: 7px; position: relative; overflow: hidden; min-width: 40px; }
+    .day-row-bar  { position: absolute; height: 100%; border-radius: 7px; }
+    .day-row-max  { font-size: 31px; font-weight: 700; width: 65px; text-align: left; flex-shrink: 0; }
+
+    .day-row-icon.icon-rain  { color: #7ecbff !important; }
+    .day-row-icon.icon-clear { color: #FFD700 !important; }
+    .day-row-icon.icon-cloud { color: rgba(255,255,255,0.75) !important; }
+    .day-row-icon.icon-snow  { color: #cce8ff !important; }
+    .day-row-icon.icon-fog   { color: rgba(255,255,255,0.55) !important; }
+
+    /* Telas de tablet (ex.: iPad): afasta o gráfico de barras da temperatura à esquerda */
+    @media (min-width: 600px) and (max-width: 1300px) {
+      .chart-center {
+        transform: translate(calc(40% - 1cm), calc(15% + 1.5cm));
+      }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="snow-canvas"></canvas>
+
+<div class="layout">
+  <div class="top">
+    <canvas id="top-rain-canvas"></canvas>
+
+    <div class="top-info-bar">
+      <div class="info-bar-left">
+        <span id="weather-icon" class="mdi"></span>
+        <span id="weather-now">--°C</span>
+      </div>
+      <div style="flex:1;display:flex;justify-content:center;align-items:center;padding-left:10%;">
+        <span id="weather-description">--</span>
+      </div>
+      <div class="info-bar-right">
+        <div id="currency-section">
+          <div id="usd">USD: --</div>
+          <div id="eur">EUR: --</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-clock">
+      <div class="clock-box">
+        <div id="clock">--:--:--</div>
+        <div id="date">...</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-side-left">
+        <span id="chart-weather-temp" class="cs-temp">--°C</span>
+      </div>
+      <div class="chart-center">
+        <div class="divider"></div>
+        <div id="day-chart-wrap"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const LAT     = -23.5189;
+  const LON     = -46.7334;
+  const API_KEY = "a1914a0291e97791460f4558d57cf359";
+
+  const DIAS_SEMANA_FULL = ['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado'];
+  const DIAS_ABREV       = ['Dom.','Seg.','Ter.','Qua.','Qui.','Sex.','Sáb.'];
+  const MESES            = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+  // ══════════════════════════════════════════
+  //  HELPERS DE CONDIÇÃO
+  // ══════════════════════════════════════════
+  const CLOUDY_KEYWORDS = [
+    'nublado','nuvens','nevoeiro','encoberto','overcast','chuva','garoa','trovoada',
+    'cloudy','clouds','fog','mist','haze','nebuloso','rain','drizzle','thunderstorm',
+    'parcialmente nublado','partly cloudy','mostly cloudy','levemente nublado','algumas nuvens','few clouds'
+  ];
+
+  function isCloudyCondition(desc) {
+    const l = (desc || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return CLOUDY_KEYWORDS.some(k => l.includes(k.normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+  }
+
+  function isNighttime() {
+    const h = new Date().getHours();
+    return h >= 19 || h < 6;
+  }
+
+  // ══════════════════════════════════════════
+  //  FUNDO — único, independente do clima
+  // ══════════════════════════════════════════
+  function updateBackground(desc) {
+    const cloudy = isCloudyCondition(desc);
+    const night  = isNighttime();
+    // Papel de parede fixo, não muda mais conforme clima/horário
+    document.body.style.backgroundImage = `url('fundo.jpg')`;
+    if (cloudy && !night) {
+      document.body.classList.add('cloudy-theme');
+    } else {
+      document.body.classList.remove('cloudy-theme');
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  MOTOR DE CHUVA
+  // ══════════════════════════════════════════
+  const DPR          = window.devicePixelRatio || 1;
+  const RAIN_DENSITY = 0.9;
+  const MAX_DROPS    = 300;
+
+  const rainCanvases = [{ id: 'top-rain-canvas', el: null, ctx: null, w: 0, h: 0 }];
+  const eng = { drops: {}, splashes: {}, lastTime: performance.now(), running: false, active: false };
+  rainCanvases.forEach(c => { eng.drops[c.id] = []; eng.splashes[c.id] = []; });
+
+  function initRainCanvases() {
+    rainCanvases.forEach(c => {
+      c.el  = document.getElementById(c.id);
+      if (!c.el) return;
+      c.ctx = c.el.getContext('2d');
+    });
+    resizeRain();
+    window.addEventListener('resize', resizeRain);
+  }
+
+  function resizeRain() {
+    rainCanvases.forEach(c => {
+      if (!c.el) return;
+      const parent = c.el.parentElement;
+      const w = Math.max(1, Math.floor(parent ? parent.offsetWidth  : window.innerWidth));
+      const h = Math.max(1, Math.floor(parent ? parent.offsetHeight : window.innerHeight));
+      c.el.width  = Math.floor(w * DPR);
+      c.el.height = Math.floor(h * DPR);
+      c.el.style.width  = w + 'px';
+      c.el.style.height = h + 'px';
+      c.w = c.el.width; c.h = c.el.height;
+      c.ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      if (eng.active) seedDrops(c.id, Math.floor(Math.min(MAX_DROPS, 120 * RAIN_DENSITY * (w / 800))));
+    });
+  }
+
+  function mkDrop(cid, randomY = false) {
+    const c = rainCanvases.find(x => x.id === cid);
+    const w = c ? c.w / DPR : window.innerWidth;
+    const h = c ? c.h / DPR : 600;
+    const layer = Math.random();
+    const speed = 350 + layer * 550;
+    const angle = (-12 + Math.random() * 8) * (Math.PI / 180);
+    return {
+      x: Math.random() * (w + 100),
+      y: randomY ? Math.random() * h : -20 - Math.random() * 100,
+      vx: Math.sin(angle) * speed, vy: Math.cos(angle) * speed,
+      ay: 80 + layer * 120, length: 10 + layer * 35,
+      width: 0.8 + layer * 2.2, alpha: 0.18 + layer * 0.55, layer
+    };
+  }
+
+  function seedDrops(cid, count) {
+    const arr = eng.drops[cid];
+    while (arr.length < count) arr.push(mkDrop(cid, true));
+    while (arr.length > count) arr.pop();
+  }
+
+  function createSplash(x, y, cid) {
+    const arr = eng.splashes[cid];
+    const count = 4 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < count; i++) {
+      const angle = -Math.PI + Math.random() * Math.PI;
+      const speed = 40 + Math.random() * 120;
+      arr.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed-60, ay: 280, r: 1+Math.random()*2.5, alpha: 0.6+Math.random()*0.4, life: 1.0 });
+    }
+  }
+
+  function physicsStep(dt) {
+    rainCanvases.forEach(c => {
+      if (!c.el) return;
+      const cw = c.w / DPR, ch = c.h / DPR;
+      const drops = eng.drops[c.id];
+      for (let i = 0; i < drops.length; i++) {
+        const d = drops[i];
+        d.vy += d.ay * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+        if (d.y > ch + 5) { if (eng.active && Math.random() < 0.3) createSplash(d.x, ch, c.id); drops[i] = mkDrop(c.id, false); }
+        else if (d.x < -60 || d.x > cw + 60) drops[i] = mkDrop(c.id, false);
+      }
+      const splashes = eng.splashes[c.id];
+      for (let i = splashes.length - 1; i >= 0; i--) {
+        const s = splashes[i];
+        s.vx *= 0.92; s.vy += s.ay * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt * 2.5;
+        if (s.life <= 0) splashes.splice(i, 1);
+      }
+    });
+  }
+
+  function drawRain(ctx, c) {
+    const drops = eng.drops[c.id];
+    ctx.save(); ctx.lineCap = 'round';
+    drops.forEach(d => {
+      const angle = Math.atan2(d.vx, d.vy);
+      const tx = d.x - Math.sin(angle) * d.length;
+      const ty = d.y - Math.cos(angle) * d.length;
+      const grad = ctx.createLinearGradient(tx, ty, d.x, d.y);
+      grad.addColorStop(0, `rgba(174,214,241,0)`);
+      grad.addColorStop(0.4, `rgba(174,214,241,${d.alpha * 0.4})`);
+      grad.addColorStop(1, `rgba(255,255,255,${d.alpha})`);
+      ctx.beginPath(); ctx.lineWidth = d.width; ctx.strokeStyle = grad;
+      ctx.moveTo(tx, ty); ctx.lineTo(d.x, d.y); ctx.stroke();
+    });
+    eng.splashes[c.id].forEach(s => {
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,230,255,${s.alpha * s.life})`; ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  function drawFrame() {
+    rainCanvases.forEach(c => {
+      if (!c.ctx) return;
+      c.ctx.clearRect(0, 0, c.w, c.h);
+      if (eng.active) {
+        c.ctx.save(); c.ctx.beginPath(); c.ctx.rect(0, 0, c.w / DPR, c.h / DPR); c.ctx.clip();
+        drawRain(c.ctx, c); c.ctx.restore();
+      }
+    });
+  }
+
+  function startEngine() {
+    if (eng.running) return;
+    eng.running = true; eng.lastTime = performance.now();
+    function step(now) {
+      const dt = Math.min(0.05, (now - eng.lastTime) / 1000);
+      eng.lastTime = now; physicsStep(dt); drawFrame(); requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function isRainCondition(condition, weatherId) {
+    const c = (condition || '').toLowerCase();
+    const id = weatherId || 0;
+    if (id >= 200 && id < 600) return true;
+    return c.includes('rain') || c.includes('drizzle') || c.includes('thunderstorm');
+  }
+
+  function setRainEffect(condition, weatherId) {
+    const isRain = isRainCondition(condition, weatherId);
+    eng.active = isRain;
+    const topEl = document.querySelector('.top');
+    if (topEl) topEl.classList.toggle('rain-overlay', isRain);
+    rainCanvases.forEach(c => {
+      if (!c.el) return;
+      if (isRain) { const w = c.w / DPR; seedDrops(c.id, Math.max(80, Math.floor(Math.min(MAX_DROPS, 160 * RAIN_DENSITY * (w / 800))))); }
+      else { eng.drops[c.id] = []; eng.splashes[c.id] = []; }
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  RELÓGIO
+  // ══════════════════════════════════════════
+  let lastHour = new Date().getHours();
+  let currentWeatherDesc = '';
+
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      String(now.getHours()).padStart(2,'0') + ':' +
+      String(now.getMinutes()).padStart(2,'0') + ':' +
+      String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('date').textContent =
+      DIAS_SEMANA_FULL[now.getDay()] + ', ' +
+      String(now.getDate()).padStart(2,'0') + ' ' +
+      MESES[now.getMonth()];
+    const h = now.getHours();
+    if (h !== lastHour) { lastHour = h; if (currentWeatherDesc) updateBackground(currentWeatherDesc); }
+
+    // Hora e data sempre em branco, independentemente de clima ou horário
+    document.getElementById('clock').style.color = '#ffffff';
+    document.getElementById('date').style.color  = '#ffffff';
+
+    alignChartWithClock();
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Alinha o limite esquerdo do gráfico de barras (.chart-center) com o início
+  // do texto do dia da semana (#date), e o limite superior com o topo da
+  // temperatura do dia (.chart-side-left)
+  // Garante que o quadrante do gráfico (temperatura + barras) nunca encoste
+  // no quadrante da hora, empurrando-o para baixo o quanto for necessário.
+  function avoidClockOverlap() {
+    const clockBox     = document.querySelector('.clock-box');
+    const chartSection = document.querySelector('.chart-section');
+    if (!clockBox || !chartSection) return;
+    const GAP = 30; // espaço mínimo de folga, em px
+    chartSection.style.marginTop = '0px';
+    const clockRect   = clockBox.getBoundingClientRect();
+    const sectionRect = chartSection.getBoundingClientRect();
+    const needed = Math.max(0, clockRect.bottom - sectionRect.top + GAP);
+    chartSection.style.marginTop = needed + 'px';
+  }
+  window.addEventListener('resize', avoidClockOverlap);
+
+  function alignChartWithClock() {
+    avoidClockOverlap();
+    const dateEl       = document.getElementById('date');
+    const tempBox      = document.querySelector('.chart-side-left');
+    const chartCenter  = document.querySelector('.chart-center');
+    const chartSection = document.querySelector('.chart-section');
+    if (!dateEl || !tempBox || !chartCenter || !chartSection) return;
+    const dateRect    = dateEl.getBoundingClientRect();
+    const tempRect    = tempBox.getBoundingClientRect();
+    const sectionRect = chartSection.getBoundingClientRect();
+    // Centro vertical do gráfico alinhado com o centro vertical do quadrante de temperatura
+    const tempCenterY = (tempRect.top + tempRect.height / 2) - sectionRect.top;
+    const chartHeight = chartCenter.offsetHeight;
+    const offsetTop   = Math.max(0, tempCenterY - chartHeight / 2);
+
+    // Esquerda do gráfico 20% mais à esquerda do que o início do dia da semana
+    const dateOffsetLeft = Math.max(0, dateRect.left - sectionRect.left);
+    const offsetLeft     = Math.max(0, dateOffsetLeft * 0.8);
+
+    chartCenter.style.marginLeft = offsetLeft + 'px';
+    chartCenter.style.marginTop  = offsetTop + 'px';
+  }
+  window.addEventListener('resize', alignChartWithClock);
+
+  // ══════════════════════════════════════════
+  //  ÍCONES E CORES
+  // ══════════════════════════════════════════
+  function weatherIcon(code) {
+    const map = {
+      'Clear':'mdi-weather-sunny','Clouds':'mdi-weather-cloudy',
+      'Rain':'mdi-weather-rainy','Drizzle':'mdi-weather-partly-rainy',
+      'Thunderstorm':'mdi-weather-lightning','Snow':'mdi-weather-snowy',
+      'Mist':'mdi-weather-fog','Fog':'mdi-weather-fog','Haze':'mdi-weather-fog'
+    };
+    return map[code] || 'mdi-weather-cloudy';
+  }
+
+  function iconColorClass(code) {
+    if (['Rain','Drizzle','Thunderstorm'].includes(code)) return 'icon-rain';
+    if (code === 'Clear') return 'icon-clear';
+    if (code === 'Snow')  return 'icon-snow';
+    if (['Mist','Fog','Haze'].includes(code)) return 'icon-fog';
+    return 'icon-cloud';
+  }
+
+  // ══════════════════════════════════════════
+  //  COTAÇÃO
+  // ══════════════════════════════════════════
+  async function loadCurrency() {
+    try {
+      const res  = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      const data = await res.json();
+      const brl  = data.rates.BRL;
+      const eur  = data.rates.EUR;
+      document.getElementById('usd').textContent = `USD: R$ ${brl.toFixed(2)}`;
+      document.getElementById('eur').textContent = `EUR: R$ ${(brl / eur).toFixed(2)}`;
+    } catch(e) {
+      document.getElementById('usd').textContent = 'USD: --';
+      document.getElementById('eur').textContent = 'EUR: --';
+    }
+  }
+  loadCurrency();
+  setInterval(loadCurrency, 300000);
+
+  // ══════════════════════════════════════════
+  //  GRÁFICO DOS PRÓXIMOS 5 DIAS
+  // ══════════════════════════════════════════
+  function buildChart(dailyKeys, dailyMap) {
+    const wrap = document.getElementById('day-chart-wrap');
+    wrap.innerHTML = '';
+    const allMins = dailyKeys.map(d => Math.min(...dailyMap[d].map(i => i.main.temp_min)));
+    const allMaxs = dailyKeys.map(d => Math.max(...dailyMap[d].map(i => i.main.temp_max)));
+    const globalMin = Math.min(...allMins);
+    const globalMax = Math.max(...allMaxs);
+    const range = globalMax - globalMin || 1;
+
+    // Cores brilhantes azul→vermelho — visíveis em qualquer transparência
+    function tempColor(t) {
+      const pct = Math.max(0, Math.min(1, (t - globalMin) / range));
+      const stops = [
+        [0,    [180, 220, 255]],  // azul bem claro
+        [0.35, [0,   240, 220]],  // ciano brilhante
+        [0.55, [120, 255, 120]],  // verde claro
+        [0.75, [255, 220, 50 ]],  // amarelo brilhante
+        [1.0,  [255, 100, 30 ]],  // laranja/vermelho
+      ];
+      let lo = stops[0], hi = stops[stops.length - 1];
+      for (let s = 0; s < stops.length - 1; s++) {
+        if (pct >= stops[s][0] && pct <= stops[s+1][0]) { lo = stops[s]; hi = stops[s+1]; break; }
+      }
+      const f = (pct - lo[0]) / ((hi[0] - lo[0]) || 1);
+      const r = Math.round(lo[1][0] + (hi[1][0] - lo[1][0]) * f);
+      const g = Math.round(lo[1][1] + (hi[1][1] - lo[1][1]) * f);
+      const b = Math.round(lo[1][2] + (hi[1][2] - lo[1][2]) * f);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    dailyKeys.forEach(d => {
+      const items = dailyMap[d];
+      const dMin  = Math.round(Math.min(...items.map(i => i.main.temp_min)));
+      const dMax  = Math.round(Math.max(...items.map(i => i.main.temp_max)));
+      const noon  = items.reduce((best, cur) => {
+        const h = new Date(cur.dt * 1000).getHours();
+        return Math.abs(h - 12) < Math.abs(new Date(best.dt * 1000).getHours() - 12) ? cur : best;
+      });
+      const ic      = weatherIcon(noon.weather[0].main);
+      const icColor = iconColorClass(noon.weather[0].main);
+
+      const minColor = tempColor(dMin);
+      const maxColor = tempColor(dMax);
+
+      const leftPct  = ((dMin - globalMin) / range * 80).toFixed(1);
+      const widthPct = ((dMax - dMin)      / range * 80).toFixed(1);
+      const dt       = new Date(d + 'T12:00:00');
+      const dayName  = DIAS_ABREV[dt.getDay()];
+
+      const row = document.createElement('div');
+      row.className = 'day-row';
+      row.innerHTML = `
+        <div class="day-row-name">${dayName}</div>
+        <span class="day-row-icon mdi ${ic} ${icColor}"></span>
+        <div class="day-row-min" style="color:${minColor}">${dMin}°</div>
+        <div class="day-row-bar-wrap">
+          <div class="day-row-bar" style="left:${leftPct}%;width:${widthPct}%;background:linear-gradient(to right,${minColor},${maxColor})"></div>
+        </div>
+        <div class="day-row-max" style="color:${maxColor}">${dMax}°</div>
+      `;
+      wrap.appendChild(row);
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  NEVE REALISTA (sem acúmulo indefinido)
+  // ══════════════════════════════════════════
+  const snowCanvas = document.getElementById('snow-canvas');
+  const snowCtx    = snowCanvas ? snowCanvas.getContext('2d') : null;
+  let snowFlakes   = [];
+  let snowPile     = null;
+  let snowRunning  = false;
+  let snowAnimId   = null;
+  let snowWind     = 0;
+  let snowWindTime = 0;
+  let snowResetTimer = null; // reseta o acúmulo periodicamente, como no dashboard 1
+
+  function resizeSnowCanvas() {
+    if (!snowCanvas) return;
+    snowCanvas.width  = window.innerWidth;
+    snowCanvas.height = window.innerHeight;
+    snowPile = new Float32Array(snowCanvas.width).fill(0);
+  }
+  window.addEventListener('resize', resizeSnowCanvas);
+
+  function drawCrystal(ctx, x, y, r, rotation, alpha, layer) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.globalAlpha = alpha;
+
+    const arms    = 6;
+    const branchL = r * 0.45;
+    const branchA = Math.PI / 5;
+
+    const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.5);
+    grd.addColorStop(0, `rgba(230,245,255,${alpha})`);
+    grd.addColorStop(1, `rgba(200,230,255,0)`);
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, Math.PI * 2); ctx.fill();
+
+    ctx.strokeStyle = layer === 0 ? `rgba(255,255,255,${alpha})` : layer === 1 ? `rgba(220,238,255,${alpha * 0.9})` : `rgba(200,225,255,${alpha * 0.75})`;
+    ctx.lineCap = 'round';
+
+    for (let i = 0; i < arms; i++) {
+      const angle = (i / arms) * Math.PI * 2;
+      const ex = Math.cos(angle) * r, ey = Math.sin(angle) * r;
+      ctx.lineWidth = Math.max(0.5, r * 0.13);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(ex, ey); ctx.stroke();
+      const steps = 2;
+      for (let s = 1; s <= steps; s++) {
+        const frac = s / (steps + 1);
+        const bx = Math.cos(angle) * r * frac, by = Math.sin(angle) * r * frac;
+        const bLen = branchL * (1 - frac * 0.4);
+        ctx.lineWidth = Math.max(0.3, r * 0.07);
+        [branchA, -branchA].forEach(da => {
+          ctx.beginPath(); ctx.moveTo(bx, by);
+          ctx.lineTo(bx + Math.cos(angle + da) * bLen, by + Math.sin(angle + da) * bLen); ctx.stroke();
+        });
+      }
+      ctx.beginPath(); ctx.arc(ex, ey, r * 0.07, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.9})`; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.12, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`; ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function createFlake(randomY) {
+    const W = snowCanvas ? snowCanvas.width  : window.innerWidth;
+    const H = snowCanvas ? snowCanvas.height : window.innerHeight;
+    const layer = Math.floor(Math.random() * 3);
+    const sizes  = [3, 6, 11];
+    const speeds = [55, 38, 22];
+    const amps   = [4,  9,  16];
+    const alphas = [0.35, 0.6, 0.9];
+    const r = sizes[layer] + Math.random() * sizes[layer] * 0.6;
+    return {
+      x: Math.random() * W,
+      y: randomY ? Math.random() * H : -r * 2 - Math.random() * 30,
+      r, layer,
+      vy: speeds[layer] + Math.random() * 15,
+      vx: (Math.random() - 0.5) * 12,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.6 + Math.random() * 1.2,
+      wobbleAmp: amps[layer],
+      alpha: alphas[layer] + Math.random() * 0.1,
+      rotation: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.8
+    };
+  }
+
+  function startSnow() {
+    if (!snowCanvas || !snowCtx || snowRunning) return;
+    resizeSnowCanvas();
+    for (let i = 0; i < 120; i++) snowFlakes.push(createFlake(true));
+    snowCanvas.classList.add('visible');
+    snowRunning = true; snowWindTime = 0;
+    let last = performance.now();
+
+    // Reseta o acúmulo de neve a cada 20 minutos, para não acumular indefinidamente
+    if (snowResetTimer) clearInterval(snowResetTimer);
+    snowResetTimer = setInterval(() => {
+      if (snowPile) snowPile.fill(0);
+    }, 20 * 60 * 1000);
+
+    function step(now) {
+      if (!snowRunning) return;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      snowWindTime += dt * 0.18;
+      snowWind = Math.sin(snowWindTime) * 18 + Math.sin(snowWindTime * 2.3) * 8;
+      const W = snowCanvas.width, H = snowCanvas.height;
+      const maxPileH = Math.round(H * 0.125);
+      snowCtx.clearRect(0, 0, W, H);
+      snowFlakes.sort((a, b) => a.layer - b.layer);
+      for (let i = 0; i < snowFlakes.length; i++) {
+        const f = snowFlakes[i];
+        f.wobble += f.wobbleSpeed * dt; f.rotation += f.rotSpeed * dt;
+        const windFactor = [0.2, 0.5, 1.0][f.layer];
+        f.x += f.vx * dt + Math.sin(f.wobble) * f.wobbleAmp * dt + snowWind * windFactor * dt;
+        f.y += f.vy * dt;
+        if (f.x < -f.r * 2) f.x = W + f.r * 2;
+        if (f.x > W + f.r * 2) f.x = -f.r * 2;
+        const col = Math.min(W - 1, Math.max(0, Math.round(f.x)));
+        const pileTop = H - snowPile[col];
+        if (f.y + f.r >= pileTop) {
+          const spread = Math.round(f.r * 1.2);
+          for (let dx = -spread; dx <= spread; dx++) {
+            const c = Math.min(W-1, Math.max(0, col+dx));
+            snowPile[c] = Math.min(maxPileH, snowPile[c] + f.r * 0.28 * (1 - Math.abs(dx)/(spread+1)));
+          }
+          snowFlakes[i] = createFlake(false); continue;
+        }
+        if (f.layer >= 1) {
+          snowCtx.save(); snowCtx.shadowColor = 'rgba(180,220,255,0.6)'; snowCtx.shadowBlur = f.r * 1.2;
+          snowCtx.beginPath(); snowCtx.arc(f.x, f.y, f.r * 0.15, 0, Math.PI * 2);
+          snowCtx.fillStyle = `rgba(255,255,255,0.01)`; snowCtx.fill(); snowCtx.restore();
+        }
+        drawCrystal(snowCtx, f.x, f.y, f.r, f.rotation, f.alpha, f.layer);
+      }
+      for (let x = 1; x < W - 1; x++) {
+        const avg = (snowPile[x-1] + snowPile[x] + snowPile[x+1]) / 3;
+        snowPile[x] += (avg - snowPile[x]) * 0.015;
+      }
+      const maxPile = Math.max(...snowPile);
+      if (maxPile > 0.5) {
+        snowCtx.save(); snowCtx.shadowColor = 'rgba(150,200,255,0.3)'; snowCtx.shadowBlur = 18;
+        snowCtx.beginPath(); snowCtx.moveTo(0, H);
+        for (let x = 0; x < W; x++) snowCtx.lineTo(x, H - snowPile[x]);
+        snowCtx.lineTo(W, H); snowCtx.closePath();
+        const sg = snowCtx.createLinearGradient(0, H - maxPile, 0, H);
+        sg.addColorStop(0,    'rgba(240,250,255,0.98)');
+        sg.addColorStop(0.25, 'rgba(220,238,255,0.95)');
+        sg.addColorStop(0.6,  'rgba(200,225,250,0.90)');
+        sg.addColorStop(1,    'rgba(180,210,245,0.80)');
+        snowCtx.fillStyle = sg; snowCtx.fill(); snowCtx.restore();
+        snowCtx.beginPath(); snowCtx.moveTo(0, H - snowPile[0]);
+        for (let x = 1; x < W; x++) snowCtx.lineTo(x, H - snowPile[x]);
+        snowCtx.strokeStyle = 'rgba(255,255,255,0.75)'; snowCtx.lineWidth = 2; snowCtx.lineCap = 'round'; snowCtx.stroke();
+        snowCtx.beginPath(); snowCtx.moveTo(0, H - snowPile[0] + 2);
+        for (let x = 1; x < W; x++) snowCtx.lineTo(x, H - snowPile[x] + 2);
+        snowCtx.strokeStyle = 'rgba(200,230,255,0.3)'; snowCtx.lineWidth = 1; snowCtx.stroke();
+      }
+      if (snowFlakes.length < 150 && Math.random() < 0.4) snowFlakes.push(createFlake(false));
+      snowAnimId = requestAnimationFrame(step);
+    }
+    snowAnimId = requestAnimationFrame(step);
+  }
+
+  function stopSnow() {
+    snowRunning = false;
+    if (snowAnimId) cancelAnimationFrame(snowAnimId);
+    if (snowResetTimer) { clearInterval(snowResetTimer); snowResetTimer = null; }
+    if (snowCanvas) snowCanvas.classList.remove('visible');
+    snowFlakes = [];
+    if (snowPile) snowPile.fill(0);
+    if (snowCtx && snowCanvas) snowCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+  }
+
+  function applySnow(temp) {
+    if (temp < 20) { if (!snowRunning) startSnow(); }
+    else { if (snowRunning) stopSnow(); }
+  }
+
+  // ══════════════════════════════════════════
+  //  CLIMA VIA API
+  // ══════════════════════════════════════════
+  async function loadWeather(attempt = 1) {
+    try {
+      const [resNow, resForecast] = await Promise.all([
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&units=metric&lang=pt_br&appid=${API_KEY}`),
+        fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${LAT}&lon=${LON}&units=metric&lang=pt_br&appid=${API_KEY}`)
+      ]);
+      if (!resNow.ok || !resForecast.ok) throw new Error('HTTP error');
+
+      const nowData      = await resNow.json();
+      const forecastData = await resForecast.json();
+
+      const temp        = Math.round(nowData.main.temp);
+      const condition   = nowData.weather[0].main;
+      const weatherId   = nowData.weather[0].id;
+      const description = nowData.weather[0].description || '';
+      const prettyDesc  = description.charAt(0).toUpperCase() + description.slice(1);
+
+      currentWeatherDesc = prettyDesc;
+
+      document.getElementById('weather-now').textContent        = `${temp}°C`;
+      document.getElementById('weather-description').textContent = prettyDesc;
+      document.getElementById('weather-icon').className          = 'mdi ' + weatherIcon(condition);
+
+      // Reavalia relógio (hora e data seguem sempre brancas)
+      updateClock();
+
+      // Temperatura no gráfico: azul se nublado/chuva, branco se limpo
+      const tempEl = document.getElementById('chart-weather-temp');
+      tempEl.textContent = `${temp}°C`;
+      const effC = condition.toLowerCase();
+      const isCloudy = effC.includes('cloud') || effC.includes('rain') || effC.includes('drizzle') ||
+                       effC.includes('thunderstorm') || effC.includes('mist') || effC.includes('fog') || effC.includes('haze');
+      tempEl.style.color = isCloudy ? '#74b9ff' : '#ffffff';
+
+      updateBackground(prettyDesc);         // fundo fixo (fundo.jpg), só ajusta cloudy-theme
+      setRainEffect(condition, weatherId);  // teste: setRainEffect('Rain', 500);
+
+      applySnow(temp);
+
+      const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+      const dailyMap = {};
+      forecastData.list.forEach(item => {
+        const d = new Date(item.dt * 1000).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+        if (!dailyMap[d]) dailyMap[d] = [];
+        dailyMap[d].push(item);
+      });
+      // Garante que hoje sempre apareça, mesmo se a API não tiver mais slots de 3h restantes no dia
+      if (!dailyMap[todayStr]) dailyMap[todayStr] = [];
+      dailyMap[todayStr].push({
+        dt: Math.floor(Date.now() / 1000),
+        main: {
+          temp_min: nowData.main.temp_min ?? nowData.main.temp,
+          temp_max: nowData.main.temp_max ?? nowData.main.temp
+        },
+        weather: nowData.weather
+      });
+      const dailyKeys = Object.keys(dailyMap).sort().filter(d => d >= todayStr).slice(0,5);
+      buildChart(dailyKeys, dailyMap);
+
+    } catch(e) {
+      console.error(`Erro loadWeather (tentativa ${attempt}):`, e);
+      if (attempt < 4) {
+        const delays = [5000, 15000, 30000];
+        document.getElementById('weather-description').textContent = 'Reconectando...';
+        setTimeout(() => loadWeather(attempt + 1), delays[attempt - 1]);
+      } else {
+        document.getElementById('weather-description').textContent = 'Sem conexão';
+        setTimeout(() => loadWeather(1), 120000);
+      }
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  INIT
+  // ══════════════════════════════════════════
+  window.addEventListener('load', () => {
+    initRainCanvases();
+    startEngine();
+    loadWeather();
+    setInterval(() => loadWeather(1), 300000);
+    initSanta();
+  });
+
+  // ══════════════════════════════════════════
+  //  PAPAI NOEL
+  //  - Renas de frente para a direção do movimento
+  //  - Altura na linha da cotação (#currency-section)
+  //  - Velocidade a 1/3 da original
+  //  - Tamanho +30%
+  //  - Aparece a cada 30 segundos (enquanto snowRunning = true)
+  // ══════════════════════════════════════════
+  const santaCanvas = document.createElement('canvas');
+  santaCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:500;';
+  document.body.appendChild(santaCanvas);
+  const santaCtx = santaCanvas.getContext('2d');
+  let santaAnimId = null;
+
+  function resizeSantaCanvas() {
+    santaCanvas.width  = window.innerWidth;
+    santaCanvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeSantaCanvas);
+
+  function getSantaY() {
+    const el = document.getElementById('date');
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      return rect.bottom + 40;
+    }
+    return santaCanvas.height * 0.78;
+  }
+
+  function drawReindeer(ctx, cx, cy, sc, phase) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(sc, sc);
+    const lp  = Math.sin(phase);
+    const lp2 = Math.sin(phase + Math.PI);
+    ctx.beginPath();
+    ctx.moveTo(-5, -38); ctx.lineTo(-18, -62); ctx.lineTo(-26, -72);
+    ctx.moveTo(-18, -62); ctx.lineTo(-10, -72);
+    ctx.moveTo(-13, -67); ctx.lineTo(-6, -76);
+    ctx.moveTo(5, -38); ctx.lineTo(16, -60); ctx.lineTo(24, -70);
+    ctx.moveTo(16, -60); ctx.lineTo(8, -70);
+    ctx.moveTo(20, -65); ctx.lineTo(28, -74);
+    ctx.lineWidth = 3.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-4, -10);
+    ctx.bezierCurveTo(-2, -28, 4, -32, 6, -38);
+    ctx.bezierCurveTo(14, -42, 20, -38, 18, -30);
+    ctx.bezierCurveTo(16, -22, 10, -20, 8, -16);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 0, 30, 14, -0.18, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-4, 6, 22, 10, -0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-28, -4, 7, 5, 0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(22, -28, 8, 5, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(18, 8); ctx.lineTo(28 + lp * 12, 28); ctx.lineTo(30 + lp * 14, 44); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(12, 10); ctx.lineTo(20 + lp * 8, 30); ctx.lineTo(22 + lp * 10, 44); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-18, 8); ctx.lineTo(-28 + lp2 * 10, 28); ctx.lineTo(-30 + lp2 * 12, 44); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-12, 10); ctx.lineTo(-20 + lp2 * 8, 30); ctx.lineTo(-22 + lp2 * 10, 44); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSleigh(ctx, cx, cy, sc) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(-sc, sc);
+    ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-60, 30); ctx.bezierCurveTo(-40, 48, 20, 48, 60, 32); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-50, 24); ctx.bezierCurveTo(-30, 42, 14, 42, 52, 26); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-55, 22); ctx.lineTo(-58, -5);
+    ctx.bezierCurveTo(-56, -28, -34, -34, -10, -28);
+    ctx.lineTo(48, -12); ctx.lineTo(52, 22); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-55, 20);
+    ctx.bezierCurveTo(-70, -10, -65, -50, -30, -60);
+    ctx.bezierCurveTo(-10, -66, 0, -50, -8, -30);
+    ctx.lineTo(-10, -28);
+    ctx.bezierCurveTo(-34, -34, -56, -28, -58, -5);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-22, -50, 20, 26, 0.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-22, -24, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(10, -18, 20, 26, 0.05, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(14, -46, 16, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(2, -56); ctx.lineTo(26, -80);
+    ctx.bezierCurveTo(32, -90, 24, -96, 18, -90);
+    ctx.lineTo(0, -68); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(16, -92, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(24, -28); ctx.bezierCurveTo(40, -24, 52, -16, 56, -8); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawStars(ctx, offsetX, baseY, sc, time, alpha) {
+    const positions = [
+      {x: 60, y: 18}, {x: 110, y: 30}, {x: 160, y: 12},
+      {x: 220, y: 26}, {x: 270, y: 8},  {x: 320, y: 22},
+    ];
+    positions.forEach((p, i) => {
+      const twinkle = 0.5 + 0.5 * Math.sin(time * 3 + i * 1.3);
+      const a    = alpha * twinkle * 0.85;
+      const size = (3 + i % 3) * sc;
+      const sx   = offsetX + p.x * sc;
+      const sy   = baseY   + p.y * sc;
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.translate(sx, sy);
+      ctx.beginPath();
+      for (let k = 0; k < 4; k++) {
+        const ang = (k / 4) * Math.PI * 2;
+        ctx.lineTo(Math.cos(ang) * size, Math.sin(ang) * size);
+        ctx.lineTo(Math.cos(ang + Math.PI/4) * size * 0.25, Math.sin(ang + Math.PI/4) * size * 0.25);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,255,255,1)'; ctx.fill();
+      ctx.restore();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function runSantaScene() {
+    resizeSantaCanvas();
+    const W     = santaCanvas.width;
+    const H     = santaCanvas.height;
+    const baseY = getSantaY();
+    const sc    = Math.max(0.25, Math.min(0.55, W / 1400)) * 0.5 * 1.3 * 1.4;
+    const reindeerCount   = 4;
+    const reindeerSpacing = 110 * sc;
+    const firstReindeerX  = 160 * sc;
+    const sceneWidth = Math.abs(firstReindeerX) + reindeerCount * reindeerSpacing + 200 * sc;
+    let posX = -sceneWidth;
+    const endPosX = W + 200 * sc;
+    const speed = ((W * 0.09) / 3) * 1.4 * 1.4;
+    let legPhase  = 0;
+    let startTime = null;
+    let alpha     = 0;
+    if (santaAnimId) cancelAnimationFrame(santaAnimId);
+    function animate(now) {
+      if (!startTime) startTime = now;
+      const elapsed = now - startTime;
+      if (posX > endPosX + 50) {
+        santaCtx.clearRect(0, 0, W, H);
+        santaAnimId = null;
+        return;
+      }
+      const dt = 1 / 60;
+      legPhase += dt * 7;
+      posX += speed * dt;
+      const enterFrac = Math.min(1, (posX + sceneWidth) / (sceneWidth * 0.3));
+      const exitFrac  = Math.min(1, (endPosX - posX)   / (sceneWidth * 0.3));
+      alpha = Math.min(enterFrac, exitFrac);
+      santaCtx.clearRect(0, 0, W, H);
+      santaCtx.fillStyle   = `rgba(8,12,35,${alpha * 0.75})`;
+      santaCtx.strokeStyle = `rgba(8,12,35,${alpha * 0.75})`;
+      santaCtx.lineWidth = Math.max(0.5, 2 * sc);
+      santaCtx.lineCap   = 'round';
+      for (let i = 0; i < reindeerCount; i++) {
+        const rx = posX + firstReindeerX + i * reindeerSpacing;
+        const ry = baseY + Math.sin(i * 0.7 + legPhase * 0.25) * 3 * sc;
+        const ropeEndX = posX + 60 * sc;
+        const midX     = (ropeEndX + rx - 32 * sc) / 2;
+        const sag      = (3 + i * 1.5) * sc;
+        santaCtx.beginPath();
+        santaCtx.moveTo(ropeEndX, baseY - 4 * sc);
+        santaCtx.quadraticCurveTo(midX, baseY - 4 * sc + sag, rx - 32 * sc, ry - 8 * sc);
+        santaCtx.stroke();
+        drawReindeer(santaCtx, rx, ry, sc * 0.85, legPhase + i * 1.4);
+      }
+      drawSleigh(santaCtx, posX, baseY, sc);
+      drawStars(santaCtx, posX - 350 * sc, baseY - 20 * sc, sc, elapsed / 1000, alpha);
+      santaAnimId = requestAnimationFrame(animate);
+    }
+    santaAnimId = requestAnimationFrame(animate);
+  }
+
+  function initSanta() {
+    // Aparição a cada 30 segundos (primeira e repetições)
+    const firstDelay = 30 * 1000;
+    setTimeout(function scheduleNext() {
+      if (snowRunning) runSantaScene();
+      const nextDelay = 30 * 1000;
+      setTimeout(scheduleNext, nextDelay);
+    }, firstDelay);
+  }
+</script>
+</body>
+</html>
