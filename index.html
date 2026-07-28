@@ -747,13 +747,24 @@
     if (!iconBox || !iconWrap || !clockBox || !topInfoBar || !chartSection || !tempBox || !topEl) return;
 
     const GAP = 20;
-    const WIDTH_SCALE = 0.78; // reduz a largura do quadrante para não encostar no quadrante da hora
+    const WIDTH_SCALE   = 0.78; // largura-base (evita encostar no quadrante da hora)
+    const SIDE_SHRINK   = 0.30; // reduz 30% de cada lateral em cima da largura-base
 
-    // 1) Tamanho do quadrante = tamanho do quadrante de temperatura do dia atual (largura reduzida)
-    const tempRect = tempBox.getBoundingClientRect();
-    iconBox.style.width  = (tempRect.width * WIDTH_SCALE) + 'px';
+    // 1) Tamanho do quadrante = tamanho do quadrante de temperatura do dia atual,
+    //    com a largura reduzida 30% de cada lado (mantendo centralizado)
+    const tempRect  = tempBox.getBoundingClientRect();
+    const fullWidth = tempRect.width * WIDTH_SCALE;
+    const newWidth  = fullWidth * (1 - SIDE_SHRINK * 2);
+
+    const topRectForLeft = topEl.getBoundingClientRect();
+    const anchorLeftPx   = topRectForLeft.width * 0.02; // referência: left:2% original
+    const centerX         = anchorLeftPx + fullWidth / 2;
+    const newLeftPx       = centerX - newWidth / 2;
+
+    iconBox.style.left   = newLeftPx + 'px';
+    iconBox.style.width  = newWidth + 'px';
     iconBox.style.height = tempRect.height + 'px';
-    iconWrap.style.fontSize = (tempRect.height * 0.72) + 'px';
+    iconWrap.style.fontSize = (Math.min(newWidth, tempRect.height) * 0.72) + 'px';
 
     // 2) Limites seguros (não encostar na barra de cima nem no que está abaixo)
     const topRect          = topEl.getBoundingClientRect();
