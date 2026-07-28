@@ -328,18 +328,61 @@
             <rect x="30" y="0" width="40" height="340" rx="20" ry="20"/>
             <circle cx="50" cy="370" r="30"/>
           </clipPath>
+
+          <!-- vidro: gradiente horizontal simulando curvatura de um tubo cilíndrico -->
+          <linearGradient id="glassWall" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.04"/>
+            <stop offset="14%"  stop-color="#ffffff" stop-opacity="0.50"/>
+            <stop offset="26%"  stop-color="#ffffff" stop-opacity="0.10"/>
+            <stop offset="55%"  stop-color="#ffffff" stop-opacity="0.16"/>
+            <stop offset="80%"  stop-color="#ffffff" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.26"/>
+          </linearGradient>
+
+          <!-- brilho vertical decorativo sobre o vidro -->
+          <linearGradient id="shineStripe" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.60"/>
+            <stop offset="45%"  stop-color="#ffffff" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.40"/>
+          </linearGradient>
+
+          <!-- reflexo esférico no bulbo -->
+          <radialGradient id="bulbHighlight" cx="35%" cy="28%" r="55%">
+            <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.60"/>
+            <stop offset="55%"  stop-color="#ffffff" stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+
+          <!-- brilho horizontal sobre o líquido, dando volume ao "menisco" -->
+          <linearGradient id="mercuryShine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#ffffff" stop-opacity="0"/>
+            <stop offset="20%"  stop-color="#ffffff" stop-opacity="0.40"/>
+            <stop offset="34%"  stop-color="#ffffff" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </linearGradient>
+
+          <filter id="thermoShadow" x="-60%" y="-20%" width="220%" height="150%">
+            <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
+          </filter>
         </defs>
 
-        <!-- vidro do termômetro -->
-        <rect x="30" y="0" width="40" height="340" rx="20" ry="20"
-              fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.45)" stroke-width="3"/>
-        <circle cx="50" cy="370" r="30"
-                fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.45)" stroke-width="3"/>
+        <!-- vidro do termômetro (com sombra para dar profundidade) -->
+        <g filter="url(#thermoShadow)">
+          <rect x="30" y="0" width="40" height="340" rx="20" ry="20"
+                fill="url(#glassWall)" stroke="rgba(255,255,255,0.55)" stroke-width="2.5"/>
+          <circle cx="50" cy="370" r="30"
+                  fill="url(#glassWall)" stroke="rgba(255,255,255,0.55)" stroke-width="2.5"/>
+        </g>
 
-        <!-- líquido (cor dinâmica azul → vermelho conforme temperatura) -->
+        <!-- líquido (cor dinâmica azul → vermelho conforme temperatura) + brilho de menisco -->
         <g clip-path="url(#thermoClip)">
           <rect id="thermo-fill" x="20" y="340" width="60" height="60" fill="#4082ff"/>
+          <rect x="20" y="0" width="60" height="400" fill="url(#mercuryShine)"/>
         </g>
+
+        <!-- reflexos de vidro por cima de tudo -->
+        <rect x="36" y="10" width="7" height="315" rx="3.5" fill="url(#shineStripe)" opacity="0.8"/>
+        <circle cx="50" cy="370" r="30" fill="url(#bulbHighlight)"/>
 
         <!-- escala -->
         <text class="thermo-tick" x="76" y="10"  text-anchor="start">45°</text>
