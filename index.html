@@ -120,6 +120,7 @@
       background: rgba(0, 0, 0, 0.60);
       border-radius: var(--radius);
       width: fit-content;
+      transform: translateY(40px); /* desce o quadrante da hora — ajuste este valor se necessário */
     }
     #clock {
       font-size: clamp(90px, 18vw, 340px);
@@ -187,7 +188,6 @@
       width: fit-content;
       align-self: center;
       margin-left: 0;
-      transform: translate(-1cm, 1.5cm);
     }
 
     .divider {
@@ -505,7 +505,12 @@
     const tempRect    = tempBox.getBoundingClientRect();
     const sectionRect = chartSection.getBoundingClientRect();
     const offsetLeft = Math.max(0, dateRect.left - sectionRect.left);
-    const offsetTop  = Math.max(0, tempRect.top - sectionRect.top);
+
+    // Centraliza verticalmente o gráfico de barras com o meio do quadrante de temperatura
+    const tempCenterY = (tempRect.top + tempRect.height / 2) - sectionRect.top;
+    const chartHeight = chartCenter.offsetHeight;
+    const offsetTop   = Math.max(0, tempCenterY - chartHeight / 2);
+
     chartCenter.style.marginLeft = offsetLeft + 'px';
     chartCenter.style.marginTop  = offsetTop + 'px';
   }
