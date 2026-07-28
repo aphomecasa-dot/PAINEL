@@ -498,18 +498,20 @@
   // Alinha o limite esquerdo do gráfico de barras (.chart-center) com o início
   // do texto do dia da semana (#date), e o limite superior com o topo da
   // temperatura do dia (.chart-side-left)
-  // Garante que o quadrante do gráfico (temperatura + barras) nunca encoste
-  // no quadrante da hora, empurrando-o para baixo o quanto for necessário.
+  // Garante que o quadrante do gráfico (temperatura + barras) fique a pelo
+  // menos 1cm de distância vertical do quadrante da hora, sem encostar nele.
+  // Usa transform (não margin) para não competir por espaço no flexbox com
+  // o quadrante da hora, que usa o espaço "sobrando" da coluna.
   function avoidClockOverlap() {
     const clockBox     = document.querySelector('.clock-box');
     const chartSection = document.querySelector('.chart-section');
     if (!clockBox || !chartSection) return;
-    const GAP = 30; // espaço mínimo de folga, em px
-    chartSection.style.marginTop = '0px';
+    const GAP_PX = 37.8; // 1cm de folga mínima
+    chartSection.style.transform = 'translateY(0px)';
     const clockRect   = clockBox.getBoundingClientRect();
     const sectionRect = chartSection.getBoundingClientRect();
-    const needed = Math.max(0, clockRect.bottom - sectionRect.top + GAP);
-    chartSection.style.marginTop = needed + 'px';
+    const needed = Math.max(0, clockRect.bottom - sectionRect.top + GAP_PX);
+    chartSection.style.transform = `translateY(${needed}px)`;
   }
   window.addEventListener('resize', avoidClockOverlap);
 
