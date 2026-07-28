@@ -178,6 +178,32 @@
       color: #ffffff;
     }
 
+    /* Quadrante próprio do ícone de clima, alinhado ao centro do quadrante da hora */
+    .weather-icon-quadrant {
+      position: absolute;
+      left: 2%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 18px 20px 18px;
+      background: rgba(0, 0, 0, 0.60);
+      border-radius: var(--radius);
+      box-sizing: border-box;
+      z-index: 2;
+    }
+    .weather-icon-quadrant .cs-icon-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+    }
+    .weather-icon-quadrant .cs-icon-wrap .mdi {
+      line-height: 1;
+    }
+
     /* Bloco central: gráfico de barras */
     .chart-center {
       flex: 0 1 auto;
@@ -222,6 +248,26 @@
     .day-row-icon.icon-snow  { color: #cce8ff !important; }
     .day-row-icon.icon-fog   { color: rgba(255,255,255,0.55) !important; }
 
+    /* ── Termômetro ── */
+    .thermo-wrap {
+      position: absolute;
+      right: 3%;
+      width: 100px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .thermo-wrap svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+    .thermo-tick {
+      font-size: 15px;
+      font-weight: 700;
+      fill: rgba(255,255,255,0.85);
+    }
+
     /* Telas de tablet (ex.: iPad): afasta o gráfico de barras da temperatura à esquerda */
     @media (min-width: 600px) and (max-width: 1300px) {
       .chart-center {
@@ -261,6 +307,10 @@
       </div>
     </div>
 
+    <div class="weather-icon-quadrant" id="weather-icon-quadrant">
+      <div id="chart-weather-icon-wrap" class="cs-icon-wrap"></div>
+    </div>
+
     <div class="chart-section">
       <div class="chart-side-left">
         <span id="chart-weather-temp" class="cs-temp">--°C</span>
@@ -271,6 +321,38 @@
       </div>
     </div>
 
+    <div class="thermo-wrap" id="thermo-wrap">
+      <svg viewBox="0 0 100 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="thermoClip">
+            <rect x="30" y="0" width="40" height="340" rx="20" ry="20"/>
+            <circle cx="50" cy="370" r="30"/>
+          </clipPath>
+        </defs>
+
+        <!-- vidro do termômetro -->
+        <rect x="30" y="0" width="40" height="340" rx="20" ry="20"
+              fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.45)" stroke-width="3"/>
+        <circle cx="50" cy="370" r="30"
+                fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.45)" stroke-width="3"/>
+
+        <!-- líquido (cor dinâmica azul → vermelho conforme temperatura) -->
+        <g clip-path="url(#thermoClip)">
+          <rect id="thermo-fill" x="20" y="340" width="60" height="60" fill="#4082ff"/>
+        </g>
+
+        <!-- escala -->
+        <text class="thermo-tick" x="76" y="10"  text-anchor="start">45°</text>
+        <text class="thermo-tick" x="76" y="120" text-anchor="start">27°</text>
+        <text class="thermo-tick" x="76" y="230" text-anchor="start">9°</text>
+        <text class="thermo-tick" x="76" y="345" text-anchor="start">-10°</text>
+
+        <!-- leitura atual -->
+        <text id="thermo-value" x="50" y="376" text-anchor="middle"
+              font-size="17" font-weight="700" fill="#fff">--°</text>
+      </svg>
+    </div>
+
   </div>
 </div>
 
@@ -278,6 +360,11 @@
   const LAT     = -23.5189;
   const LON     = -46.7334;
   const API_KEY = "a1914a0291e97791460f4558d57cf359";
+
+  // Escala do termômetro (ajuste se quiser outro range)
+  const THERMO_MIN = -10;
+  const THERMO_MAX = 45;
+  let currentTempValue = null;
 
   const DIAS_SEMANA_FULL = ['Domingo','Segunda-Feira','Terça-Feira','Quarta-Feira','Quinta-Feira','Sexta-Feira','Sábado'];
   const DIAS_ABREV       = ['Dom.','Seg.','Ter.','Qua.','Qui.','Sex.','Sáb.'];
@@ -515,8 +602,151 @@
   }
   window.addEventListener('resize', avoidClockOverlap);
 
+  // ══════════════════════════════════════════
+  //  TERMÔMETRO
+  // ══════════════════════════════════════════
+  function tempToColor(t) {
+    const pct = Math.max(0, Math.min(1, (t - THERMO_MIN) / (THERMO_MAX - THERMO_MIN)));
+    const cold = [64, 130, 255];  // azul
+    const hot  = [255, 55, 40];   // vermelho
+    const r = Math.round(cold[0] + (hot[0] - cold[0]) * pct);
+    const g = Math.round(cold[1] + (hot[1] - cold[1]) * pct);
+    const b = Math.round(cold[2] + (hot[2] - cold[2]) * pct);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function updateThermometer() {
+    const wrap        = document.getElementById('thermo-wrap');
+    const clockBox     = document.querySelector('.clock-box');
+    const chartCenter  = document.querySelector('.chart-center');
+    const topEl        = document.querySelector('.top');
+    if (!wrap || !clockBox || !chartCenter || !topEl) return;
+
+    // Alinha topo com o topo do quadrante da hora, e base com a base do gráfico de barras
+    const clockRect = clockBox.getBoundingClientRect();
+    const chartRect = chartCenter.getBoundingClientRect();
+    const topRect   = topEl.getBoundingClientRect();
+
+    const wrapTop    = clockRect.top - topRect.top;
+    const wrapBottom = chartRect.bottom - topRect.top;
+    const wrapHeight = Math.max(60, wrapBottom - wrapTop);
+
+    wrap.style.top    = wrapTop + 'px';
+    wrap.style.height = wrapHeight + 'px';
+
+    if (currentTempValue === null) return;
+
+    const pct   = Math.max(0, Math.min(1, (currentTempValue - THERMO_MIN) / (THERMO_MAX - THERMO_MIN)));
+    const color = tempToColor(currentTempValue);
+
+    const fillEl = document.getElementById('thermo-fill');
+    if (fillEl) {
+      const fillHeight = pct * 340 + 60; // 60 = cobre também o bulbo
+      const fillY      = 340 - pct * 340;
+      fillEl.setAttribute('y', fillY);
+      fillEl.setAttribute('height', fillHeight);
+      fillEl.setAttribute('fill', color);
+    }
+
+    const valueEl = document.getElementById('thermo-value');
+    if (valueEl) valueEl.textContent = Math.round(currentTempValue) + '°';
+  }
+
+  // Sincroniza o tamanho do quadrante do ícone com o quadrante de temperatura,
+  // centraliza com o centro do quadrante da hora e evita encostar em qualquer
+  // quadrante vizinho (barra superior, hora, e o que está abaixo).
+  // Monta o ícone grande do quadrante próprio, com cores específicas por condição.
+  // Tempestade usa duas camadas: nuvem azul escura + raio amarelo, já que o
+  // glyph combinado do MDI é de uma cor só.
+  function setBigWeatherIcon(condition) {
+    const wrap = document.getElementById('chart-weather-icon-wrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    function makeIcon(iconClass, color, extraStyle) {
+      const span = document.createElement('span');
+      span.className = 'mdi ' + iconClass;
+      span.style.color = color;
+      if (extraStyle) Object.assign(span.style, extraStyle);
+      return span;
+    }
+
+    if (condition === 'Clear') {
+      wrap.appendChild(makeIcon('mdi-weather-sunny', '#FFD700'));
+    } else if (condition === 'Clouds') {
+      wrap.appendChild(makeIcon('mdi-weather-cloudy', '#ffffff'));
+    } else if (condition === 'Rain' || condition === 'Drizzle') {
+      wrap.appendChild(makeIcon('mdi-weather-rainy', '#7ecbff'));
+    } else if (condition === 'Thunderstorm') {
+      const cloud = makeIcon('mdi-weather-cloudy', '#0d1b4c', {
+        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)'
+      });
+      const bolt = makeIcon('mdi-lightning-bolt', '#FFD700', {
+        position: 'absolute', fontSize: '46%', top: '64%', left: '62%', transform: 'translate(-50%,-50%)'
+      });
+      wrap.appendChild(cloud);
+      wrap.appendChild(bolt);
+    } else if (condition === 'Snow') {
+      wrap.appendChild(makeIcon('mdi-weather-snowy', '#cce8ff'));
+    } else { // Mist, Fog, Haze e fallback
+      wrap.appendChild(makeIcon('mdi-weather-fog', 'rgba(255,255,255,0.75)'));
+    }
+  }
+
+  function alignWeatherIconWithClock() {
+    const iconBox       = document.getElementById('weather-icon-quadrant');
+    const iconWrap       = document.getElementById('chart-weather-icon-wrap');
+    const clockBox       = document.querySelector('.clock-box');
+    const topInfoBar     = document.querySelector('.top-info-bar');
+    const chartSection   = document.querySelector('.chart-section');
+    const tempBox        = document.querySelector('.chart-side-left');
+    const topEl          = document.querySelector('.top');
+    if (!iconBox || !iconWrap || !clockBox || !topInfoBar || !chartSection || !tempBox || !topEl) return;
+
+    const GAP = 20;
+    const WIDTH_SCALE = 0.78; // reduz a largura do quadrante para não encostar no quadrante da hora
+
+    // 1) Tamanho do quadrante = tamanho do quadrante de temperatura do dia atual (largura reduzida)
+    const tempRect = tempBox.getBoundingClientRect();
+    iconBox.style.width  = (tempRect.width * WIDTH_SCALE) + 'px';
+    iconBox.style.height = tempRect.height + 'px';
+    iconWrap.style.fontSize = (tempRect.height * 0.72) + 'px';
+
+    // 2) Limites seguros (não encostar na barra de cima nem no que está abaixo)
+    const topRect          = topEl.getBoundingClientRect();
+    const clockRect        = clockBox.getBoundingClientRect();
+    const topInfoRect      = topInfoBar.getBoundingClientRect();
+    const chartSectionRect = chartSection.getBoundingClientRect();
+    const iconRect         = iconBox.getBoundingClientRect();
+    const iconHeight       = iconRect.height;
+
+    const minTop = (topInfoRect.bottom - topRect.top) + GAP;
+    const maxTop = (chartSectionRect.top - topRect.top) - GAP - iconHeight;
+
+    // 3) Posição desejada: centralizado com o centro do quadrante da hora
+    const clockCenterY = (clockRect.top + clockRect.height / 2) - topRect.top;
+    let desiredTop = clockCenterY - iconHeight / 2;
+    desiredTop = Math.max(minTop, Math.min(maxTop, desiredTop));
+
+    // 4) Evita encostar horizontalmente no quadrante da hora
+    const iconRight = iconRect.right;
+    if (iconRight + GAP > clockRect.left) {
+      const belowClockTop = (clockRect.bottom - topRect.top) + GAP;
+      const aboveClockTop = (clockRect.top - topRect.top) - GAP - iconHeight;
+      if (belowClockTop <= maxTop) {
+        desiredTop = Math.max(minTop, Math.min(maxTop, belowClockTop));
+      } else if (aboveClockTop >= minTop) {
+        desiredTop = Math.max(minTop, Math.min(maxTop, aboveClockTop));
+      }
+    }
+
+    iconBox.style.top = desiredTop + 'px';
+  }
+
   function alignChartWithClock() {
     avoidClockOverlap();
+    updateThermometer();
+    alignWeatherIconWithClock();
     const dateEl       = document.getElementById('date');
     const tempBox      = document.querySelector('.chart-side-left');
     const chartCenter  = document.querySelector('.chart-center');
@@ -842,6 +1072,7 @@
       const forecastData = await resForecast.json();
 
       const temp        = Math.round(nowData.main.temp);
+      currentTempValue  = nowData.main.temp;
       const condition   = nowData.weather[0].main;
       const weatherId   = nowData.weather[0].id;
       const description = nowData.weather[0].description || '';
@@ -852,6 +1083,9 @@
       document.getElementById('weather-now').textContent        = `${temp}°C`;
       document.getElementById('weather-description').textContent = prettyDesc;
       document.getElementById('weather-icon').className          = 'mdi ' + weatherIcon(condition);
+
+      const chartIconEl = document.getElementById('chart-weather-icon-wrap');
+      if (chartIconEl) setBigWeatherIcon(condition);
 
       // Reavalia relógio (hora e data seguem sempre brancas)
       updateClock();
